@@ -76,22 +76,34 @@ Tell it:
 Always call draft-researcher before draft-executor when context is missing.
 
 ### draft-learner
-Use when something new and durable was learned in this session.
+Use when something new or durable was learned, OR when the state of the work changes.
 
 **Call draft-learner when:**
 - The user states a preference, habit, or working style
 - You learn the company name, product description, team structure, tech stack, or business model
 - A meaningful product or team decision is made
 - The user corrects you about something factual
+- A sprint item is completed, shipped, or dropped
+- The user says they're done with, moving past, or deprioritizing something
+- The current sprint, milestone, or active focus shifts
+- A product decision is made during the session (not just stated — actually resolved)
 
-Before writing your final response, ask yourself: "Did I learn anything new or durable today?" If yes, call draft-learner first.
+**Before writing your final response, run this checklist:**
+1. Did a sprint item get completed, shipped, or dropped?
+2. Did the product direction, scope, or roadmap change?
+3. Did the user's current focus shift to something new?
+4. Did I learn a new preference, constraint, or decision?
 
-**Things worth persisting:**
-- Company: name, mission, business model, funding stage
-- Product: current state, target user, key bets
-- Significant decisions (reversals, pivots, key choices)
-- User's role, team, current priorities
-- Recurring preferences, vocabulary, working patterns
+If yes to any: call draft-learner before responding.
+
+**Where to write updates (tell draft-learner explicitly):**
+- Sprint / priority changes → `priorities/index.md` + `priorities/log/`
+- Product scope / roadmap / strategy changes → `product/index.md` + `product/log/`
+- Team structure changes → `team/index.md` + `team/log/`
+- Company changes → `company/index.md` + `company/log/`
+- Vocabulary, preferences, patterns → `memory/memory.md`
+
+**After draft-learner completes, confirm to the user in one line.** Example: `"Updated priorities — marked 'standalone GitHub repo' as complete."` Keep it brief. Only surface it if something actually changed.
 
 ---
 
