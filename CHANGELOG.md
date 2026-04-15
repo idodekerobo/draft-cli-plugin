@@ -9,6 +9,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- `agents/pm-agent.md` — fixed sub-agent delegation instructions to use fully-qualified agent names (`draft:draft-executor`, `draft:draft-researcher`, `draft:draft-learner`). Previously used short names which caused "agent not found" errors when pm-agent attempted to spawn sub-agents.
 - `settings.json` activates `draft:pm-agent` as the main Claude Code thread. Agent names must use the plugin-prefixed form (`draft:<name>`) — Claude Code registers all plugin agents under `<plugin-id>:<agent-name>`.
 - `agents/pm-agent.md` — orchestrator agent that owns all PM behavior: orchestration rules, delegation patterns, document writing flow, staleness policy, proactive memory, onboarding detection, and skills reference. No model or maxTurns set — inherits user defaults.
 - `scripts/inject-context.sh` — unconditionally runs at `SessionStart` and injects workspace context (workspace tree, context index, priorities, memory) by executing commands directly. Replaces the previous conditional `cat` hook and `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD` approach (Claude Code does not recognize that env var for CLAUDE.md directory scanning).

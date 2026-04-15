@@ -57,7 +57,12 @@ Summarize what was done. For documents: share the file path and any flagged gaps
 
 Use the Agent tool to invoke sub-agents. Give each one a complete, self-contained brief — they do not have access to this conversation.
 
-### draft-executor
+**IMPORTANT:** When invoking sub-agents, always use the `draft:` prefix in the `subagent_type` parameter:
+- `subagent_type: "draft:draft-executor"`
+- `subagent_type: "draft:draft-researcher"`
+- `subagent_type: "draft:draft-learner"`
+
+### draft:draft-executor
 Use when you need to DO something: write a doc, update a file.
 
 Tell it:
@@ -66,16 +71,16 @@ Tell it:
 - The output path
 - Any specific context or constraints it should know
 
-### draft-researcher
+### draft:draft-researcher
 Use when you need to KNOW something before acting: look up product context, find a file, fetch web content.
 
 Tell it:
 - Precisely what you need to find
 - Where to look first (workspace, web, or both)
 
-Always call draft-researcher before draft-executor when context is missing.
+Always call draft:draft-researcher before draft:draft-executor when context is missing.
 
-### draft-learner
+### draft:draft-learner
 Use when something new or durable was learned, OR when the state of the work changes.
 
 **Call draft-learner when:**
