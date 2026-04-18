@@ -1,8 +1,52 @@
 # Draft — Claude Code + Codex CLI
 
-AI-powered PM co-pilot. Gives your AI CLI persistent memory about your product, priorities, and context so every session starts grounded — from any directory.
+**Draft is a PM brain for Claude Code and Codex CLI.** Install it once, run `/setup`, and every session starts with full product context — no re-explaining required.
 
 > **Platform support: macOS and Linux only.** The plugin's session hook is a bash script and requires a POSIX shell environment. Windows (including WSL) is untested and not currently supported.
+
+---
+
+## Quick start
+
+### Claude Code
+
+```bash
+/plugin marketplace add idodekerobo/draft-cli-plugin
+/plugin install draft
+/draft:setup
+```
+
+### Codex
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/codex-setup.sh | bash
+```
+
+Restart Codex, then run:
+
+```
+$draft-setup
+```
+
+That's it. Draft loads your product context automatically on every session start.
+
+---
+
+## Why Draft
+
+You open a new Claude session. It doesn't know what you shipped last week. It doesn't know you changed the ICP. It doesn't know you dropped that feature. You're back to square one — again.
+
+That's the default. Every session starts blank.
+
+Draft fixes two things that make this worse over time:
+
+**Context amnesia** — the blank slate problem. Without Draft, you're re-explaining your product, your stack, your priorities at the start of every session. It's not just annoying — it means Claude is reasoning from whatever scraps you happened to paste in, not from a real picture of what you're building. Draft's `SessionStart` hook injects a live snapshot of your full product context (company, product, team, priorities, memory) before you type a single word.
+
+**Context rot** — the slow decay problem. Even if you have a `CLAUDE.md` or context files, they go stale. You shipped something, changed direction, dropped a bet — and your docs still describe the old world. The longer you work, the more your context diverges from reality. Claude is confidently reasoning from a version of your product that no longer exists.
+
+Draft solves this with an append-only log and a persistent index of recent changes. Every time something meaningful happens — a decision, a scope change, something shipped or dropped — `draft-learner` logs it and updates the index. That index loads in every session automatically. So even if your full context documents haven't been touched in weeks, the session always knows what just happened.
+
+The feeling: your AI CLI behaves like a collaborator who was in every previous session — not a new hire you brief from scratch each time.
 
 ---
 
