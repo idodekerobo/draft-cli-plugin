@@ -1,43 +1,57 @@
-# Draft — Claude Code Plugin
+# Draft — Claude Code + Codex CLI
 
-AI-powered PM co-pilot. Gives Claude persistent memory about your product, priorities, and context so every session starts grounded — from any directory.
+AI-powered PM co-pilot. Gives your AI CLI persistent memory about your product, priorities, and context so every session starts grounded — from any directory.
 
 > **Platform support: macOS and Linux only.** The plugin's session hook is a bash script and requires a POSIX shell environment. Windows (including WSL) is untested and not currently supported.
 
 ---
 
-## Plugin structure
+## Installation
+
+### Claude Code
+
+```bash
+# Install via plugin directory (local testing only — marketplace submission pending)
+claude --plugin-dir ./draft-cli-plugin
+
+# Run the setup interview
+/draft:setup
+```
+
+The plugin's `SessionStart` hook handles everything else automatically on first launch.
+
+### Codex
+
+This is a **direct install**, not a Codex plugin. The setup script writes directly into your `~/.codex/` directory — no plugin marketplace involved.
+
+**Option 1 — curl (no clone needed):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/codex-setup.sh | bash
+```
+
+**Option 2 — from a local clone:**
+
+```bash
+bash ./scripts/codex-setup.sh
+```
+
+The script installs seven things:
+1. Creates `~/.draft/workspace/` with a blank context/memory structure
+2. Installs `inject-context.sh` to `~/.codex/hooks/draft/`
+3. Registers the `SessionStart` hook in `~/.codex/hooks.json`
+4. Enables the `codex_hooks` feature flag in `~/.codex/config.toml`
+5. Installs sub-agent TOML files to `~/.codex/agents/`
+6. Writes pm-agent instructions to `~/.codex/AGENTS.md`
+7. Installs the `$draft-setup` skill to `~/.agents/skills/draft-setup/SKILL.md`
+
+After the script completes, restart Codex, then run:
 
 ```
-cli-agent-plugin/
-├── .claude-plugin/
-│   └── plugin.json               Plugin manifest (name: "draft", v1.0.0-beta)
-├── settings.json                 Activates pm-agent as the main Claude Code thread
-├── agents/
-│   ├── pm-agent.md               Main thread — orchestrator with all PM behavior
-│   ├── draft-researcher.md       Finds and retrieves information
-│   ├── draft-executor.md         Takes concrete actions (writes docs)
-│   └── draft-learner.md          Updates persistent memory files
-├── skills/
-│   └── setup/SKILL.md            /draft:setup — onboarding interview skill
-├── hooks/
-│   └── hooks.json                SessionStart → session-init.sh + inject-context.sh
-├── scripts/
-│   ├── session-init.sh           Guarded bootstrap + settings.json configuration
-│   └── inject-context.sh         Unconditional context injection on every session start
-├── workspace-template/           Blank workspace copied to ~/.draft/workspace on first run
-│   ├── CLAUDE.md                 Dynamic context injection (workspace snapshot — no behavioral prose)
-│   ├── context/
-│   │   ├── company/index.md
-│   │   ├── product/index.md
-│   │   ├── priorities/index.md
-│   │   ├── team/index.md
-│   │   ├── user/index.md
-│   │   └── tensions.md
-│   └── memory/
-│       └── memory.md
-└── README.md
+$draft-setup
 ```
+
+> **Note on `$` prefix:** `$draft-setup` is how Codex invokes skills. The `$` prefix is Codex-specific — slash commands (like `/draft:setup`) are Codex built-ins only and cannot be extended by external installs.
 
 ---
 
@@ -45,11 +59,7 @@ cli-agent-plugin/
 
 ### Agent architecture
 
-When the plugin is enabled, `settings.json` activates `draft:pm-agent` as the main Claude Code thread. This means every session opens with the pm-agent system prompt rather than the default Claude Code prompt.
-
-> **Note:** The agent name must be prefixed with `draft:` (the plugin identifier). Claude Code registers all plugin agents under `<plugin-name>:<agent-name>`, so `pm-agent` alone is not found.
-
-`pm-agent` is the orchestrator — it handles all PM work and delegates to three specialized sub-agents:
+Draft uses an orchestrator + three sub-agents pattern. The pm-agent is the main thread — it handles all PM work and delegates to specialists.
 
 | Agent | Role |
 |---|---|
@@ -60,86 +70,185 @@ When the plugin is enabled, `settings.json` activates `draft:pm-agent` as the ma
 
 Most requests follow: `draft-researcher` gathers context → `draft-executor` acts → `draft-learner` saves.
 
+#### Claude Code
+`settings.json` activates `draft:pm-agent` as the main Claude Code thread. Every session opens with the pm-agent system prompt rather than the default Claude Code prompt.
+
+#### Codex
+`~/.codex/AGENTS.md` contains the pm-agent instructions and loads as persistent context for every Codex session. Sub-agents are installed as custom agent `.toml` files in `~/.codex/agents/`.
+
 ---
 
 ### Context loading
 
 There are two layers of context loaded at session start:
 
-**1. Agent system prompt (`agents/pm-agent.md`) — static**
+**1. Agent system prompt — static**
 
-The pm-agent's instructions are baked in at plugin install time. They define:
+The pm-agent's instructions define:
 - PM role and orchestration behavior
 - Delegation rules and when to use each sub-agent
 - Document writing flow and template selection
 - Context staleness policy (7-day / 21-day)
 - Proactive memory rules and what's worth persisting
-- Onboarding detection (auto-starts `/draft:setup` interview if no context exists)
-- Skills reference for connected integrations
+- Onboarding detection (auto-starts setup interview if no context exists)
 
 **2. Workspace context (`scripts/inject-context.sh`) — dynamic**
 
-Runs unconditionally on every `SessionStart` via the plugin hook. Executes four commands and outputs the results directly into the session context:
+Runs on every `SessionStart` via hook. Executes four commands and outputs the results directly into the session context:
 
 | Command | What it injects |
 |---|---|
-| `tree` | Two-level directory listing of `context/` — shows what dimensions exist |
-| Python script | Frontmatter block from each `context/*/index.md`: `name`, `description`, `last_updated`, `source` |
-| `cat priorities/index.md` | Full body of the current priorities file |
-| `cat memory/memory.md` | Full body of memory — vocabulary, preferences, patterns, goals |
+| `tree` | Two-level directory listing of `context/` |
+| Python script | Frontmatter from each `context/*/index.md`: name, description, last_updated, source |
+| `cat priorities/index.md` | Full current priorities file |
+| `cat memory/memory.md` | Full memory — vocabulary, preferences, patterns, goals |
 
-The pm-agent uses the context summaries as its orientation layer each session. When a task requires more detail than the frontmatter provides, it reads the relevant file in full.
-
-> **Why not `CLAUDE.md` with `!` commands?** `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD` is not a recognized Claude Code setting — it does not cause Claude Code to scan additional directories for `CLAUDE.md` files. `inject-context.sh` runs the commands directly and is guaranteed to work.
+The pm-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
 
 ---
 
 ### Session lifecycle
 
-#### First session (after install)
+#### Claude Code — first session (after install)
 
 1. **`SessionStart` hook fires** → runs `scripts/session-init.sh`
-2. **Workspace bootstrap** (guarded — runs once):
-   - Copies `workspace-template/` → `~/.draft/workspace/`
-3. **`~/.claude/settings.json` configuration** (guarded — runs once):
-   - Sets `DRAFT_WORKSPACE` env var
-   - Adds `~/.draft/workspace` to `additionalDirectories`
-   - Adds `Read/Write/Edit` permissions for `~/.draft/**`
+2. **Workspace bootstrap** (guarded — runs once): copies `workspace-template/` → `~/.draft/workspace/`
+3. **`~/.claude/settings.json` updated** (guarded — runs once): sets `DRAFT_WORKSPACE` env var, adds `~/.draft/workspace` to `additionalDirectories`, grants `Read/Write/Edit` for `~/.draft/**`
 4. Settings take effect on the next session start
 
-#### Every subsequent session
+#### Claude Code — every subsequent session
 
-1. **`SessionStart` hook fires** → `session-init.sh` guards pass, exits in <10ms
-2. **`inject-context.sh` runs** — executes context commands and outputs live workspace state
-3. **`draft:pm-agent` activates** as the main thread (via `settings.json`)
-4. **pm-agent is oriented** — knows what context dimensions exist, how fresh they are, current priorities, and memory
+1. `session-init.sh` guards pass, exits in <10ms
+2. `inject-context.sh` runs — outputs live workspace snapshot into session context
+3. `draft:pm-agent` activates as main thread
+4. pm-agent is oriented: context dimensions, freshness, priorities, memory
 
-If the workspace has no context yet, the dynamic sections fall back to "No context loaded yet — run /draft:setup."
+#### Codex — after running `codex-setup.sh`
+
+1. `SessionStart` hook fires → `inject-context.sh` runs, outputs workspace snapshot as developer context
+2. `~/.codex/AGENTS.md` (pm-agent instructions) loads as persistent context
+3. pm-agent is oriented and ready
+
+---
+
+## Plugin structure
+
+```
+draft-cli-plugin/
+├── .claude-plugin/
+│   └── plugin.json               Claude Code plugin manifest
+├── .codex/
+│   ├── AGENTS.md                 pm-agent instructions for Codex (installed to ~/.codex/AGENTS.md)
+│   └── agents/
+│       ├── draft-researcher.toml Codex sub-agent definition
+│       ├── draft-executor.toml   Codex sub-agent definition
+│       └── draft-learner.toml    Codex sub-agent definition
+├── agents/
+│   ├── pm-agent.md               Claude Code — main orchestrator agent
+│   ├── draft-researcher.md       Claude Code — researcher sub-agent
+│   ├── draft-executor.md         Claude Code — executor sub-agent
+│   └── draft-learner.md          Claude Code — learner sub-agent
+├── skills/
+│   └── draft-setup/SKILL.md      /draft:setup (Claude Code) / $draft-setup (Codex) — onboarding interview
+├── hooks/
+│   └── hooks.json                Claude Code SessionStart hooks
+├── scripts/
+│   ├── session-init.sh           Claude Code — guarded bootstrap + settings.json configuration
+│   ├── inject-context.sh         Shared — context injection (runs on every session start)
+│   ├── codex-setup.sh            Codex — one-time setup script (curl or local clone)
+│   └── codex-uninstall.sh        Codex — removes everything codex-setup.sh installed
+├── workspace-template/           Blank workspace, copied to ~/.draft/workspace on first run
+│   ├── CLAUDE.md
+│   ├── context/
+│   │   ├── company/index.md
+│   │   ├── product/index.md
+│   │   ├── priorities/index.md
+│   │   ├── team/index.md
+│   │   ├── user/index.md
+│   │   └── tensions.md
+│   └── memory/
+│       └── memory.md
+├── README.md
+└── CHANGELOG.md
+```
+
+---
+
+## Workspace layout
+
+Both Claude Code and Codex share the same workspace at `~/.draft/workspace/`:
+
+```
+~/.draft/workspace/
+├── context/
+│   ├── company/index.md + log/
+│   ├── product/index.md + log/
+│   ├── user/index.md
+│   ├── team/index.md + log/
+│   ├── priorities/index.md + log/
+│   ├── decisions/
+│   └── tensions.md
+├── memory/
+│   └── memory.md
+├── docs/
+│   ├── prds/
+│   └── decisions/
+└── templates/
+    ├── prd.md
+    └── fang-decision-doc.md
+```
+
+The workspace lives outside `~/.claude/` and `~/.codex/` intentionally — it's shared across both CLIs.
 
 ---
 
 ## Path conventions
 
-| Variable | Resolves to | Used in |
+| Variable | Resolves to | Set by |
 |---|---|---|
-| `$DRAFT_WORKSPACE` | `~/.draft/workspace` (set by `session-init.sh`) | `CLAUDE.md` `!` commands, agent instructions |
-
-All agent files reference `$DRAFT_WORKSPACE` for file paths. The workspace lives outside `~/.claude/` intentionally — so the same files can be read by other tools (Codex, etc.) without requiring Claude Code-specific path resolution.
+| `$DRAFT_WORKSPACE` | `~/.draft/workspace` | `session-init.sh` (Claude Code) / `codex-setup.sh` (Codex) |
 
 ---
 
 ## Testing locally
 
-```bash
-# Load the plugin for a single session (dev/test)
-claude --plugin-dir ./cli-agent-plugin
+### Claude Code
 
-# After first session, verify settings were written
+```bash
+# Load the plugin for a single session
+claude --plugin-dir ./draft-cli-plugin
+
+# Verify settings were written after first session
 cat ~/.claude/settings.json | python3 -m json.tool
 
-# Run the setup interview
+# Run setup
 /draft:setup
 
-# Verify workspace was created
+# Verify workspace
 ls ~/.draft/workspace/
+```
+
+### Codex
+
+```bash
+# Run the setup script directly from the plugin repo
+bash ./scripts/codex-setup.sh
+
+# Verify hook was registered
+cat ~/.codex/hooks.json | python3 -m json.tool
+
+# Verify agents were installed
+ls ~/.codex/agents/
+
+# Verify AGENTS.md was written
+head -5 ~/.codex/AGENTS.md
+
+# Verify the skill was installed
+ls ~/.agents/skills/
+
+# Restart Codex, then run setup
+$draft-setup
+
+# To uninstall
+bash ./scripts/codex-uninstall.sh
 ```

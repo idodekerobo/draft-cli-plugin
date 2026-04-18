@@ -1,0 +1,260 @@
+#!/bin/bash
+# Draft — One-time Codex setup
+#
+# End-user install (no local repo needed):
+#   curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/codex-setup.sh | bash
+#
+# Local development (from plugin repo root):
+#   bash ./scripts/codex-setup.sh
+#
+# What this does:
+#   1. Creates ~/.draft/workspace/ with blank context/memory structure
+#   2. Installs inject-context.sh to ~/.codex/hooks/draft/
+#   3. Registers the SessionStart hook in ~/.codex/hooks.json
+#   4. Enables the codex_hooks feature flag in ~/.codex/config.toml
+#   5. Installs sub-agent TOML files to ~/.codex/agents/
+#   6. Writes pm-agent instructions to ~/.codex/AGENTS.md
+#   7. Installs draft:setup skill to ~/.agents/skills/ for $draft:setup invocation
+#
+# After running: restart Codex, then run /draft:setup to load your PM brain.
+
+set -euo pipefail
+
+GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main"
+CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log()  { echo -e "${GREEN}[Draft]${NC} $1"; }
+warn() { echo -e "${YELLOW}[Draft]${NC} $1"; }
+err()  { echo -e "${RED}[Draft]${NC} $1" >&2; }
+
+# Detect whether we're running from inside the plugin repo.
+# BASH_SOURCE[0] is unset when piped via curl | bash, so we check for the
+# plugin root's marker file relative to the script location.
+SCRIPT_DIR=""
+PLUGIN_ROOT=""
+USE_LOCAL=false
+
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    if [ -f "$PLUGIN_ROOT/.codex/AGENTS.md" ]; then
+        USE_LOCAL=true
+    fi
+fi
+
+install_file() {
+    local src_rel="$1"   # relative path within the plugin (e.g. scripts/inject-context.sh)
+    local dest="$2"       # absolute destination path
+
+    if [ "$USE_LOCAL" = true ]; then
+        cp "$PLUGIN_ROOT/$src_rel" "$dest"
+    else
+        curl -fsSL "$GITHUB_RAW/$src_rel" -o "$dest"
+    fi
+}
+
+# Require python3
+if ! command -v python3 &>/dev/null; then
+    err "python3 is required but not found. Install it and re-run."
+    exit 1
+fi
+
+echo ""
+if [ "$USE_LOCAL" = true ]; then
+    log "Setting up Draft for Codex (local source: $PLUGIN_ROOT)..."
+else
+    log "Setting up Draft for Codex (source: GitHub main)..."
+fi
+echo ""
+
+# ── 1. Bootstrap workspace ─────────────────────────────────────────────────────
+
+if [ ! -d "$DRAFT_WORKSPACE" ]; then
+    log "Creating workspace at $DRAFT_WORKSPACE..."
+
+    mkdir -p \
+        "$DRAFT_WORKSPACE/context/company/log" \
+        "$DRAFT_WORKSPACE/context/product/log" \
+        "$DRAFT_WORKSPACE/context/user" \
+        "$DRAFT_WORKSPACE/context/team/log" \
+        "$DRAFT_WORKSPACE/context/priorities/log" \
+        "$DRAFT_WORKSPACE/context/decisions" \
+        "$DRAFT_WORKSPACE/memory" \
+        "$DRAFT_WORKSPACE/docs/prds" \
+        "$DRAFT_WORKSPACE/docs/decisions" \
+        "$DRAFT_WORKSPACE/templates"
+
+    for dim in company product user team priorities; do
+        cat > "$DRAFT_WORKSPACE/context/$dim/index.md" <<EOF
+---
+name: $dim
+description: >
+  No information recorded yet.
+last_updated: ""
+source: ""
+---
+EOF
+    done
+
+    cat > "$DRAFT_WORKSPACE/context/tensions.md" <<'EOF'
+# Tensions
+
+Active contradictions and inconsistencies noticed across context dimensions.
+EOF
+
+    cat > "$DRAFT_WORKSPACE/memory/memory.md" <<'EOF'
+---
+name: memory
+description: Vocabulary, working preferences, and non-obvious patterns.
+last_updated: ""
+source: ""
+---
+
+## Vocabulary
+
+## Preferences
+
+## Goals
+
+## Patterns
+EOF
+
+    log "Workspace created at $DRAFT_WORKSPACE"
+else
+    warn "Workspace already exists at $DRAFT_WORKSPACE — skipping creation."
+fi
+
+# ── 2. Install hook scripts ────────────────────────────────────────────────────
+
+log "Installing inject-context hook script..."
+mkdir -p "$CODEX_HOME/hooks/draft"
+install_file "scripts/inject-context.sh" "$CODEX_HOME/hooks/draft/inject-context.sh"
+chmod +x "$CODEX_HOME/hooks/draft/inject-context.sh"
+log "Hook script installed to $CODEX_HOME/hooks/draft/inject-context.sh"
+
+# ── 3. Register SessionStart hook in ~/.codex/hooks.json ──────────────────────
+
+log "Registering SessionStart hook..."
+
+python3 - <<PYEOF
+import json, sys
+from pathlib import Path
+
+hooks_path = Path("$CODEX_HOME/hooks.json")
+hook_command = "bash $CODEX_HOME/hooks/draft/inject-context.sh"
+
+if hooks_path.exists():
+    try:
+        data = json.loads(hooks_path.read_text())
+    except Exception:
+        data = {}
+else:
+    data = {}
+
+hooks = data.setdefault("hooks", {})
+session_hooks = hooks.setdefault("SessionStart", [])
+
+already = any(
+    any(h.get("command") == hook_command for h in group.get("hooks", []))
+    for group in session_hooks
+    if isinstance(group, dict)
+)
+
+if already:
+    print("[Draft] Hook already registered — skipping.")
+    sys.exit(0)
+
+session_hooks.append({
+    "matcher": "startup|resume",
+    "hooks": [
+        {
+            "type": "command",
+            "command": hook_command,
+            "statusMessage": "Loading Draft workspace context"
+        }
+    ]
+})
+
+hooks_path.parent.mkdir(parents=True, exist_ok=True)
+hooks_path.write_text(json.dumps(data, indent=2) + "\n")
+print("[Draft] Hook registered in ~/.codex/hooks.json")
+PYEOF
+
+# ── 4. Enable hooks feature flag in ~/.codex/config.toml ──────────────────────
+
+log "Enabling codex_hooks feature flag..."
+
+python3 - <<PYEOF
+import re
+from pathlib import Path
+
+config_path = Path("$CODEX_HOME/config.toml")
+content = config_path.read_text() if config_path.exists() else ""
+
+if "codex_hooks" in content:
+    print("[Draft] codex_hooks already set — skipping.")
+elif "[features]" in content:
+    content = re.sub(
+        r'(\[features\][^\[]*)',
+        r'\1codex_hooks = true\n',
+        content,
+        count=1,
+        flags=re.DOTALL
+    )
+    config_path.write_text(content)
+    print("[Draft] Added codex_hooks = true to existing [features] block.")
+else:
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(content + "\n[features]\ncodex_hooks = true\n")
+    print("[Draft] Added [features] block with codex_hooks = true.")
+PYEOF
+
+# ── 5. Install sub-agent TOML files ───────────────────────────────────────────
+
+log "Installing sub-agent definitions..."
+mkdir -p "$CODEX_HOME/agents"
+
+for agent in draft-researcher draft-executor draft-learner; do
+    install_file ".codex/agents/$agent.toml" "$CODEX_HOME/agents/$agent.toml"
+    log "  Installed $agent.toml"
+done
+
+# ── 6. Write pm-agent instructions to ~/.codex/AGENTS.md ──────────────────────
+
+log "Writing pm-agent instructions to ~/.codex/AGENTS.md..."
+
+if [ -f "$CODEX_HOME/AGENTS.md" ]; then
+    warn "~/.codex/AGENTS.md already exists — backing up to ~/.codex/AGENTS.md.bak"
+    cp "$CODEX_HOME/AGENTS.md" "$CODEX_HOME/AGENTS.md.bak"
+fi
+
+install_file ".codex/AGENTS.md" "$CODEX_HOME/AGENTS.md"
+log "AGENTS.md written."
+
+# ── 7. Install Draft skill to user-level skills directory ─────────────────────
+#
+# Codex loads skills from ~/.agents/skills/ for any repo/directory.
+# Installing here makes $draft:setup available everywhere without plugins.
+
+USER_SKILLS_DIR="$HOME/.agents/skills"
+
+log "Installing draft:setup skill..."
+mkdir -p "$USER_SKILLS_DIR/draft-setup"
+install_file "skills/draft-setup/SKILL.md" "$USER_SKILLS_DIR/draft-setup/SKILL.md"
+log "  Skill installed to $USER_SKILLS_DIR/draft-setup/SKILL.md"
+
+# ── Done ──────────────────────────────────────────────────────────────────────
+
+echo ""
+log "Setup complete."
+echo ""
+echo "  Next steps:"
+echo "  1. Restart Codex"
+echo "  2. Type \$draft:setup to initialize your PM brain"
+echo ""

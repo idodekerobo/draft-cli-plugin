@@ -1,5 +1,5 @@
 ---
-name: setup
+name: draft-setup
 description: >
   PM brain initialization. Runs a short conversational interview to derive
   product context, then writes structured files to the workspace so every
