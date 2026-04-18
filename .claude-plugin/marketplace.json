@@ -1,0 +1,39 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "draft",
+  "owner": {
+    "name": "Idode Kerobo",
+    "email": "idode.kerobo@gmail.com"
+  },
+  "homepage": "https://draftai.us/",
+  "metadata": {
+    "description": "A persistent PM brain for Claude Code. Run /draft:setup once — every session starts with full product context.",
+    "version": "1.0.0-beta"
+  },
+  "plugins": [
+    {
+      "name": "draft",
+      "description": "AI-powered PM co-pilot. Persistent memory and context layer for Claude Code — helps founders and PMs think, write, and act on product work without re-explaining context every session.",
+      "version": "1.0.0-beta",
+      "source": "./",
+      "strict": false,
+      "author": {
+        "name": "Idode Kerobo",
+        "email": "idode.kerobo@gmail.com",
+        "url": "https://idode.xyz/"
+      },
+      "homepage": "https://github.com/idodekerobo/draft-cli-plugin",
+      "repository": "https://github.com/idodekerobo/draft-cli-plugin",
+      "license": "MIT",
+      "keywords": [
+        "product-management",
+        "pm-brain",
+        "context",
+        "memory",
+        "founders",
+        "claude-code"
+      ],
+      "category": "productivity"
+    }
+  ]
+}

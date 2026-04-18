@@ -10,11 +10,23 @@ AI-powered PM co-pilot. Gives your AI CLI persistent memory about your product, 
 
 ### Claude Code
 
-```bash
-# Install via plugin directory (local testing only — marketplace submission pending)
-claude --plugin-dir ./draft-cli-plugin
+**Option 1 — Plugin marketplace (recommended):**
 
-# Run the setup interview
+```bash
+/plugin marketplace add idodekerobo/draft-cli-plugin
+/plugin install draft
+```
+
+Then run the setup interview:
+
+```
+/draft:setup
+```
+
+**Option 2 — Local install (for testing/development):**
+
+```bash
+claude --plugin-dir ./draft-cli-plugin
 /draft:setup
 ```
 
@@ -136,7 +148,8 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 ```
 draft-cli-plugin/
 ├── .claude-plugin/
-│   └── plugin.json               Claude Code plugin manifest
+│   ├── plugin.json               Claude Code plugin manifest
+│   └── marketplace.json          Plugin marketplace catalog
 ├── .codex/
 │   ├── AGENTS.md                 pm-agent instructions for Codex (installed to ~/.codex/AGENTS.md)
 │   └── agents/
