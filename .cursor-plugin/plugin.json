@@ -1,0 +1,29 @@
+{
+  "name": "draft",
+  "displayName": "Draft — PM Brain for Cursor",
+  "version": "0.1.0",
+  "description": "Persistent product memory for Cursor. Every session starts knowing your product, team, and priorities. Write PRDs, log decisions, and keep your PM context fresh — all without re-explaining yourself.",
+  "author": "Idode Kerobo",
+  "license": "MIT",
+  "repository": "https://github.com/idodekerobo/draft-cli-plugin",
+  "homepage": "https://draftai.us",
+  "keywords": ["product-management", "pm-brain", "context", "memory", "PRD", "decisions", "product-os"],
+  "icon": "",
+  "rules": [
+    ".cursor/rules/draft-context.mdc"
+  ],
+  "skills": [
+    "skills/draft-setup/SKILL.md"
+  ],
+  "agents": [
+    "agents/draft-researcher.md",
+    "agents/draft-executor.md",
+    "agents/draft-learner.md"
+  ],
+  "hooks": {
+    "config": ".cursor/hooks.json",
+    "scripts": [
+      "scripts/cursor-session-start.sh"
+    ]
+  }
+}
