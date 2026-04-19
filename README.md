@@ -1,6 +1,6 @@
-# Draft — Claude Code + Codex CLI
+# Draft — Claude Code + Codex CLI + Cursor
 
-**Draft is a PM brain for Claude Code and Codex CLI.** Install it once, run `/setup`, and every session starts with full product context — no re-explaining required.
+**Draft is a PM brain for Claude Code, Codex CLI, and Cursor.** Install it once, run `/setup`, and every session starts with full product context — no re-explaining required.
 
 > **Platform support: macOS and Linux only.** The plugin's session hook is a bash script and requires a POSIX shell environment. Windows (including WSL) is untested and not currently supported.
 
@@ -28,7 +28,13 @@ Restart Codex, then run:
 $draft-setup
 ```
 
-That's it. Draft loads your product context automatically on every session start.
+### Cursor
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/cursor-setup.sh | bash
+```
+
+Restart Cursor. Your product context loads automatically into every new Composer session — no action needed. If this is your first time using Draft, run `/draft-setup` in the Agent tab.
 
 ---
 
@@ -40,13 +46,13 @@ That's the default. Every session starts blank.
 
 Draft fixes two things that make this worse over time:
 
-**Context amnesia** — the blank slate problem. Without Draft, you're re-explaining your product, your stack, your priorities at the start of every session. It's not just annoying — it means Claude is reasoning from whatever scraps you happened to paste in, not from a real picture of what you're building. Draft's `SessionStart` hook injects a live snapshot of your full product context (company, product, team, priorities, memory) before you type a single word.
+**Context amnesia** — the blank slate problem. Without Draft, you're re-explaining your product, your stack, your priorities at the start of every session. It's not just annoying — it means Claude is reasoning from whatever scraps you happened to paste in, not from a real picture of what you're building. Draft's session hook injects a live snapshot of your full product context (company, product, team, priorities, memory) before you type a single word.
 
 **Context rot** — the slow decay problem. Even if you have a `CLAUDE.md` or context files, they go stale. You shipped something, changed direction, dropped a bet — and your docs still describe the old world. The longer you work, the more your context diverges from reality. Claude is confidently reasoning from a version of your product that no longer exists.
 
 Draft solves this with an append-only log and a persistent index of recent changes. Every time something meaningful happens — a decision, a scope change, something shipped or dropped — `draft-learner` logs it and updates the index. That index loads in every session automatically. So even if your full context documents haven't been touched in weeks, the session always knows what just happened.
 
-The feeling: your AI CLI behaves like a collaborator who was in every previous session — not a new hire you brief from scratch each time.
+The feeling: your AI tool behaves like a collaborator who was in every previous session — not a new hire you brief from scratch each time.
 
 ---
 
@@ -75,6 +81,8 @@ claude --plugin-dir ./draft-cli-plugin
 ```
 
 The plugin's `SessionStart` hook handles everything else automatically on first launch.
+
+---
 
 ### Codex
 
@@ -109,6 +117,52 @@ $draft-setup
 
 > **Note on `$` prefix:** `$draft-setup` is how Codex invokes skills. The `$` prefix is Codex-specific — slash commands (like `/draft:setup`) are Codex built-ins only and cannot be extended by external installs.
 
+To uninstall:
+
+```bash
+bash ./scripts/codex-uninstall.sh
+```
+
+---
+
+### Cursor
+
+This is a **direct install** into `~/.cursor/`. The setup script is smart about what it installs — if the Claude Code or Codex plugin is already installed, it skips anything that would create a duplicate PM brain in Cursor's context (see [Multi-editor setup](#multi-editor-setup) below).
+
+**Option 1 — curl (no clone needed):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/cursor-setup.sh | bash
+```
+
+**Option 2 — from a local clone:**
+
+```bash
+bash ./scripts/cursor-setup.sh
+```
+
+The script installs:
+1. Creates `~/.draft/workspace/` if it doesn't already exist
+2. Installs `cursor-session-start.sh` to `~/.cursor/hooks/draft/`
+3. Registers the `sessionStart` hook in `~/.cursor/hooks.json`
+4. [If no Claude Code/Codex plugin] Installs `draft-context.mdc` to `~/.cursor/rules/`
+5. [If no Claude Code plugin] Installs sub-agents to `~/.cursor/agents/`
+6. Installs the `/draft-setup` skill to `~/.cursor/skills/` and `~/.agents/skills/`
+
+After the script completes, **restart Cursor**. Your product context will be automatically injected into every new Agent tab (Composer) session — you don't need to do anything. The injection happens silently in the background via the `sessionStart` hook.
+
+If this is a fresh Draft install, open the Agent tab and run:
+
+```
+/draft-setup
+```
+
+To uninstall:
+
+```bash
+bash ./scripts/cursor-uninstall.sh
+```
+
 ---
 
 ## How it works
@@ -132,6 +186,9 @@ Most requests follow: `draft-researcher` gathers context → `draft-executor` ac
 #### Codex
 `~/.codex/AGENTS.md` contains the pm-agent instructions and loads as persistent context for every Codex session. Sub-agents are installed as custom agent `.toml` files in `~/.codex/agents/`.
 
+#### Cursor
+`~/.cursor/rules/draft-context.mdc` (installed with `alwaysApply: true`) contains the pm-agent instructions and is injected into every Agent tab session. Sub-agents are available in `~/.cursor/agents/` and invocable by name in the Agent tab. When Claude Code is also installed, Cursor reads `~/.claude/agents/` directly and `draft-context.mdc` is skipped to avoid duplication.
+
 ---
 
 ### Context loading
@@ -148,18 +205,24 @@ The pm-agent's instructions define:
 - Proactive memory rules and what's worth persisting
 - Onboarding detection (auto-starts setup interview if no context exists)
 
-**2. Workspace context (`scripts/inject-context.sh`) — dynamic**
+**2. Workspace context — dynamic**
 
-Runs on every `SessionStart` via hook. Executes four commands and outputs the results directly into the session context:
+Injected on every session start via hook. Outputs a live snapshot of:
 
-| Command | What it injects |
+| Section | What it contains |
 |---|---|
-| `tree` | Two-level directory listing of `context/` |
-| Python script | Frontmatter from each `context/*/index.md`: name, description, last_updated, source |
-| `cat priorities/index.md` | Full current priorities file |
-| `cat memory/memory.md` | Full memory — vocabulary, preferences, patterns, goals |
+| Workspace structure | Two-level directory listing of `context/` |
+| Context index | Frontmatter from each `context/*/index.md`: name, description, last_updated, source |
+| Current priorities | Full `context/priorities/index.md` |
+| Memory | Full `memory/memory.md` — vocabulary, preferences, patterns, goals |
 
 The pm-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
+
+| Editor | Hook mechanism | Output format |
+|---|---|---|
+| Claude Code | `SessionStart` → `inject-context.sh` | Raw text into session context |
+| Codex | `SessionStart` → `inject-context.sh` | Raw text as developer context |
+| Cursor | `sessionStart` → `cursor-session-start.sh` | `{ "additional_context": "..." }` JSON into initial system context |
 
 ---
 
@@ -185,6 +248,26 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 2. `~/.codex/AGENTS.md` (pm-agent instructions) loads as persistent context
 3. pm-agent is oriented and ready
 
+#### Cursor — after running `cursor-setup.sh`
+
+1. New Agent tab (Composer) session opens
+2. `sessionStart` hook fires → `cursor-session-start.sh` runs silently in the background
+3. Workspace snapshot injected as initial system context via `additional_context`
+4. `draft-context.mdc` rule loaded (if Claude Code plugin is not also installed)
+5. pm-agent is oriented and ready — context loads before you type your first message
+
+---
+
+### Multi-editor setup
+
+Draft's workspace at `~/.draft/workspace/` is shared across all editors. Running setup for multiple editors does not create multiple workspaces — it just connects each editor to the same PM brain.
+
+**If you use Claude Code + Cursor:** Run `claude plugin install` first, then `cursor-setup.sh`. The Cursor setup script detects the Claude Code plugin and skips installing duplicate rules and sub-agents. Cursor reads `~/.claude/agents/` natively.
+
+**If you use Codex + Cursor:** Run `codex-setup.sh` first, then `cursor-setup.sh`. The Cursor setup script detects `~/.codex/AGENTS.md` and skips the rules install. Sub-agents are still installed to `~/.cursor/agents/` since Cursor does not read `~/.codex/agents/` natively.
+
+**If you use all three:** Claude Code install first, then Codex, then Cursor. Cursor will use Claude Code's agents and skip its own rules install.
+
 ---
 
 ## Plugin structure
@@ -195,25 +278,34 @@ draft-cli-plugin/
 │   ├── plugin.json               Claude Code plugin manifest
 │   └── marketplace.json          Plugin marketplace catalog
 ├── .codex/
-│   ├── AGENTS.md                 pm-agent instructions for Codex (installed to ~/.codex/AGENTS.md)
+│   ├── AGENTS.md                 pm-agent instructions for Codex (→ ~/.codex/AGENTS.md)
 │   └── agents/
 │       ├── draft-researcher.toml Codex sub-agent definition
 │       ├── draft-executor.toml   Codex sub-agent definition
 │       └── draft-learner.toml    Codex sub-agent definition
+├── .cursor/
+│   ├── hooks.json                In-repo Cursor hooks config (dev use)
+│   └── rules/
+│       └── draft-context.mdc     pm-agent instructions for Cursor (→ ~/.cursor/rules/)
+├── .cursor-plugin/
+│   └── plugin.json               Cursor marketplace manifest (pending submission)
 ├── agents/
-│   ├── pm-agent.md               Claude Code — main orchestrator agent
-│   ├── draft-researcher.md       Claude Code — researcher sub-agent
-│   ├── draft-executor.md         Claude Code — executor sub-agent
-│   └── draft-learner.md          Claude Code — learner sub-agent
+│   ├── pm-agent.md               Orchestrator agent (Claude Code + Cursor)
+│   ├── draft-researcher.md       Researcher sub-agent
+│   ├── draft-executor.md         Executor sub-agent
+│   └── draft-learner.md          Learner sub-agent
 ├── skills/
-│   └── draft-setup/SKILL.md      /draft:setup (Claude Code) / $draft-setup (Codex) — onboarding interview
+│   └── draft-setup/SKILL.md      Onboarding interview skill
 ├── hooks/
-│   └── hooks.json                Claude Code SessionStart hooks
+│   └── hooks.json                Claude Code SessionStart hooks config
 ├── scripts/
-│   ├── session-init.sh           Claude Code — guarded bootstrap + settings.json configuration
-│   ├── inject-context.sh         Shared — context injection (runs on every session start)
-│   ├── codex-setup.sh            Codex — one-time setup script (curl or local clone)
-│   └── codex-uninstall.sh        Codex — removes everything codex-setup.sh installed
+│   ├── session-init.sh           Claude Code — guarded bootstrap + settings config
+│   ├── inject-context.sh         Claude Code + Codex — context injection hook
+│   ├── cursor-session-start.sh   Cursor — context injection hook (JSON output)
+│   ├── codex-setup.sh            Codex — one-time setup
+│   ├── codex-uninstall.sh        Codex — removes everything codex-setup.sh installed
+│   ├── cursor-setup.sh           Cursor — one-time setup
+│   └── cursor-uninstall.sh       Cursor — removes everything cursor-setup.sh installed
 ├── workspace-template/           Blank workspace, copied to ~/.draft/workspace on first run
 │   ├── CLAUDE.md
 │   ├── context/
@@ -233,7 +325,7 @@ draft-cli-plugin/
 
 ## Workspace layout
 
-Both Claude Code and Codex share the same workspace at `~/.draft/workspace/`:
+All editors share the same workspace at `~/.draft/workspace/`:
 
 ```
 ~/.draft/workspace/
@@ -255,7 +347,7 @@ Both Claude Code and Codex share the same workspace at `~/.draft/workspace/`:
     └── fang-decision-doc.md
 ```
 
-The workspace lives outside `~/.claude/` and `~/.codex/` intentionally — it's shared across both CLIs.
+The workspace lives outside `~/.claude/`, `~/.codex/`, and `~/.cursor/` intentionally — it's editor-agnostic and shared across all three.
 
 ---
 
@@ -263,7 +355,7 @@ The workspace lives outside `~/.claude/` and `~/.codex/` intentionally — it's 
 
 | Variable | Resolves to | Set by |
 |---|---|---|
-| `$DRAFT_WORKSPACE` | `~/.draft/workspace` | `session-init.sh` (Claude Code) / `codex-setup.sh` (Codex) |
+| `$DRAFT_WORKSPACE` | `~/.draft/workspace` | `session-init.sh` (Claude Code) / `codex-setup.sh` (Codex) / `cursor-setup.sh` (Cursor) |
 
 ---
 
@@ -288,7 +380,7 @@ ls ~/.draft/workspace/
 ### Codex
 
 ```bash
-# Run the setup script directly from the plugin repo
+# Run the setup script from the plugin repo
 bash ./scripts/codex-setup.sh
 
 # Verify hook was registered
@@ -308,4 +400,32 @@ $draft-setup
 
 # To uninstall
 bash ./scripts/codex-uninstall.sh
+```
+
+### Cursor
+
+```bash
+# Run the setup script from the plugin repo
+bash ./scripts/cursor-setup.sh
+
+# Verify hook was registered
+cat ~/.cursor/hooks.json | python3 -m json.tool
+
+# Verify the session-start script outputs valid JSON
+bash ~/.cursor/hooks/draft/cursor-session-start.sh
+
+# Verify sub-agents were installed (if Claude Code plugin is not present)
+ls ~/.cursor/agents/
+
+# Verify rules file was installed (if Claude Code plugin is not present)
+ls ~/.cursor/rules/
+
+# Verify the skill was installed
+ls ~/.cursor/skills/
+
+# Restart Cursor — context loads automatically in every new Agent tab session
+# If fresh install, run /draft-setup in the Agent tab
+
+# To uninstall
+bash ./scripts/cursor-uninstall.sh
 ```
