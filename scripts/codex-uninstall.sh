@@ -15,6 +15,7 @@ set -euo pipefail
 
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 USER_SKILL_DIR="$HOME/.agents/skills/draft-setup"
+USER_LEARN_SKILL_DIR="$HOME/.agents/skills/draft-learn"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -107,16 +108,24 @@ else
     warn "AGENTS.md not found — skipping."
 fi
 
-# ── 5. Remove Draft skill ──────────────────────────────────────────────────────
+# ── 5. Remove Draft skills ─────────────────────────────────────────────────────
 
 if [ -d "$USER_SKILL_DIR" ]; then
     rm -rf "$USER_SKILL_DIR"
     log "Removed skill at $USER_SKILL_DIR"
-    rmdir "$HOME/.agents/skills" 2>/dev/null || true
-    rmdir "$HOME/.agents" 2>/dev/null || true
 else
     warn "Skill not found at $USER_SKILL_DIR — skipping."
 fi
+
+if [ -d "$USER_LEARN_SKILL_DIR" ]; then
+    rm -rf "$USER_LEARN_SKILL_DIR"
+    log "Removed skill at $USER_LEARN_SKILL_DIR"
+else
+    warn "Skill not found at $USER_LEARN_SKILL_DIR — skipping."
+fi
+
+rmdir "$HOME/.agents/skills" 2>/dev/null || true
+rmdir "$HOME/.agents" 2>/dev/null || true
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
@@ -129,6 +138,7 @@ echo "    ~/.codex/hooks.json  (Draft entry only)"
 echo "    ~/.codex/agents/draft-{researcher,executor,learner}.toml"
 echo "    ~/.codex/AGENTS.md"
 echo "    ~/.agents/skills/draft-setup/  (\$draft-setup skill)"
+echo "    ~/.agents/skills/draft-learn/  (\$draft-learn skill)"
 echo ""
 echo "  What was kept:"
 echo "    ~/.draft/workspace/  (your PM brain data is untouched)"

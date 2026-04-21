@@ -249,6 +249,11 @@ mkdir -p "$USER_SKILLS_DIR/draft-setup"
 install_file "skills/draft-setup/SKILL.md" "$USER_SKILLS_DIR/draft-setup/SKILL.md"
 log "  Skill installed to $USER_SKILLS_DIR/draft-setup/SKILL.md"
 
+log "Installing draft:learn skill..."
+mkdir -p "$USER_SKILLS_DIR/draft-learn"
+install_file "skills/draft-learn/SKILL.md" "$USER_SKILLS_DIR/draft-learn/SKILL.md"
+log "  Skill installed to $USER_SKILLS_DIR/draft-learn/SKILL.md"
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""

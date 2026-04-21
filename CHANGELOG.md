@@ -9,6 +9,27 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — `/draft:learn` skill
+
+- `skills/draft-learn/SKILL.md` — new slash command for manually saving learnings to the Draft workspace. Supports three invocation modes:
+  - **No args** (`/draft:learn`) — conversational mode. Asks one question ("What did you learn or decide?"), then routes the answer automatically.
+  - **Free-form statement** (`/draft:learn we decided to drop the bridge daemon`) — classifies the learning by content and routes to the appropriate file(s) without requiring the user to specify a type. Only asks a clarifying question if classification is genuinely ambiguous.
+  - **Explicit tag** (`/draft:learn [decision] drop the bridge daemon`) — bypasses inference entirely and writes directly to the tagged destination. Supported tags: `[decision]`, `[priority]`, `[product]`, `[company]`, `[team]`, `[memory]`, `[pref]`, `[vocab]`.
+- Classification routes to the correct workspace file and writes a log entry where appropriate: `context/decisions/`, `context/priorities/index.md`, `context/product/index.md`, `context/company/index.md`, `context/team/index.md`, or `memory/memory.md`. A single learning can update multiple files when the content spans dimensions (e.g. a decision that affects both product direction and the current sprint).
+- Updated `scripts/codex-setup.sh` — installs `draft-learn` skill to `~/.agents/skills/draft-learn/` alongside `draft-setup`. Codex requires explicit skill installation; it does not auto-discover.
+- Updated `scripts/codex-uninstall.sh` — removes `~/.agents/skills/draft-learn/` on uninstall.
+- Updated `scripts/cursor-setup.sh` — installs `draft-learn` skill to `~/.cursor/skills/draft-learn/` and `~/.agents/skills/draft-learn/`.
+- Updated `scripts/cursor-uninstall.sh` — removes both `draft-learn` skill paths on uninstall.
+
+**Platform invocation:**
+| Platform | Command |
+|---|---|
+| Claude Code | `/draft:learn` (auto-discovered) |
+| Codex | `$draft-learn` |
+| Cursor | `/draft-learn` |
+
+---
+
 ### Added — Cursor support
 - `scripts/cursor-setup.sh` — one-time setup script for Cursor IDE and Cursor CLI. Installs the `sessionStart` hook, PM brain rules, sub-agent definitions, and the `/draft-setup` skill into `~/.cursor/`. Run via `bash ./scripts/cursor-setup.sh` from the repo root, or `curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/cursor-setup.sh | bash`. Detects existing Claude Code and Codex plugin installations and skips anything that would create duplicate PM brain context in Cursor.
 - `scripts/cursor-uninstall.sh` — cleanly reverses everything `cursor-setup.sh` installed. Removes the sessionStart hook entry, hook script, rules file, sub-agents, and skill. Preserves `~/.draft/workspace/` (PM brain data is never touched).

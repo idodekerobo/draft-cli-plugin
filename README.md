@@ -180,6 +180,74 @@ Draft uses an orchestrator + three sub-agents pattern. The pm-agent is the main 
 
 Most requests follow: `draft-researcher` gathers context → `draft-executor` acts → `draft-learner` saves.
 
+---
+
+### Slash commands
+
+Draft ships two slash commands (skills). Both are auto-discovered by Claude Code, and manually installed by the Codex and Cursor setup scripts.
+
+#### `/draft:setup` (`$draft-setup` on Codex, `/draft-setup` on Cursor)
+
+Runs the PM brain initialization interview. Ask it once at install, or again after a significant product shift. See [Quick start](#quick-start).
+
+---
+
+#### `/draft:learn` (`$draft-learn` on Codex, `/draft-learn` on Cursor)
+
+Manually tells Draft to remember something — a decision you made, a priority that shifted, a term your team uses, anything worth persisting to your workspace. You can call it three ways:
+
+**1. No arguments — conversational**
+
+```
+/draft:learn
+```
+
+Draft asks one question: *"What did you learn or decide?"* You answer, it figures out where to write it, confirms what it saved.
+
+Best when: you want to capture something but haven't formed it into a statement yet.
+
+---
+
+**2. Free-form statement**
+
+```
+/draft:learn we decided to drop the bridge daemon and go plugin-only
+```
+
+Draft reads the statement, classifies the type of learning (decision, priority shift, product direction, company update, team change, or preference), routes it to the right file(s), and confirms. It will only ask a clarifying question if the classification is genuinely ambiguous — most statements are clear enough to route automatically.
+
+Best when: you know what you want to save and just want to say it.
+
+---
+
+**3. Explicit tag**
+
+```
+/draft:learn [decision] drop the bridge daemon
+/draft:learn [priority] bridge daemon is now deferred
+/draft:learn [product] ICP is now "the curator" — one high-agency PM who owns source of truth
+/draft:learn [vocab] "builders" = PMs and founders using Claude Code
+```
+
+The tag tells Draft exactly where to write without any inference. Supported tags: `[decision]`, `[priority]`, `[product]`, `[company]`, `[team]`, `[memory]`, `[pref]`, `[vocab]`.
+
+Best when: you know the type and want the fastest, most predictable path.
+
+---
+
+**What gets written and where**
+
+| Learning type | Destination | Log entry? |
+|---|---|---|
+| `[decision]` | `context/decisions/{slug}.md` | No (plus any affected index files) |
+| `[priority]` | `context/priorities/index.md` | Yes |
+| `[product]` | `context/product/index.md` | Yes |
+| `[company]` | `context/company/index.md` | Structural changes only |
+| `[team]` | `context/team/index.md` | Structural changes only |
+| `[memory]` / `[pref]` / `[vocab]` | `memory/memory.md` | No |
+
+A single learning can map to multiple files. "We decided to cut the bridge daemon" writes a decision file, updates `context/product/index.md`, and updates `context/priorities/index.md` — because all three reflect the new reality.
+
 #### Claude Code
 `settings.json` activates `draft:pm-agent` as the main Claude Code thread. Every session opens with the pm-agent system prompt rather than the default Claude Code prompt.
 
@@ -295,7 +363,8 @@ draft-cli-plugin/
 │   ├── draft-executor.md         Executor sub-agent
 │   └── draft-learner.md          Learner sub-agent
 ├── skills/
-│   └── draft-setup/SKILL.md      Onboarding interview skill
+│   ├── draft-setup/SKILL.md      Onboarding interview skill
+│   └── draft-learn/SKILL.md      Manual learning capture skill
 ├── hooks/
 │   └── hooks.json                Claude Code SessionStart hooks config
 ├── scripts/

@@ -14,6 +14,8 @@ set -euo pipefail
 CURSOR_HOME="${CURSOR_HOME:-$HOME/.cursor}"
 CURSOR_SKILL_DIR="$CURSOR_HOME/skills/draft-setup"
 AGENTS_SKILL_DIR="$HOME/.agents/skills/draft-setup"
+CURSOR_LEARN_SKILL_DIR="$CURSOR_HOME/skills/draft-learn"
+AGENTS_LEARN_SKILL_DIR="$HOME/.agents/skills/draft-learn"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -102,24 +104,40 @@ for agent in draft-researcher draft-executor draft-learner; do
 done
 rmdir "$CURSOR_HOME/agents" 2>/dev/null || true
 
-# ── 5. Remove Draft skill ──────────────────────────────────────────────────────
+# ── 5. Remove Draft skills ─────────────────────────────────────────────────────
 
 if [ -d "$CURSOR_SKILL_DIR" ]; then
     rm -rf "$CURSOR_SKILL_DIR"
     log "Removed skill at $CURSOR_SKILL_DIR"
-    rmdir "$CURSOR_HOME/skills" 2>/dev/null || true
 else
     warn "Skill not found at $CURSOR_SKILL_DIR — skipping."
 fi
 
+if [ -d "$CURSOR_LEARN_SKILL_DIR" ]; then
+    rm -rf "$CURSOR_LEARN_SKILL_DIR"
+    log "Removed skill at $CURSOR_LEARN_SKILL_DIR"
+else
+    warn "Skill not found at $CURSOR_LEARN_SKILL_DIR — skipping."
+fi
+
+rmdir "$CURSOR_HOME/skills" 2>/dev/null || true
+
 if [ -d "$AGENTS_SKILL_DIR" ]; then
     rm -rf "$AGENTS_SKILL_DIR"
     log "Removed skill at $AGENTS_SKILL_DIR"
-    rmdir "$HOME/.agents/skills" 2>/dev/null || true
-    rmdir "$HOME/.agents" 2>/dev/null || true
 else
     warn "Skill not found at $AGENTS_SKILL_DIR — skipping."
 fi
+
+if [ -d "$AGENTS_LEARN_SKILL_DIR" ]; then
+    rm -rf "$AGENTS_LEARN_SKILL_DIR"
+    log "Removed skill at $AGENTS_LEARN_SKILL_DIR"
+else
+    warn "Skill not found at $AGENTS_LEARN_SKILL_DIR — skipping."
+fi
+
+rmdir "$HOME/.agents/skills" 2>/dev/null || true
+rmdir "$HOME/.agents" 2>/dev/null || true
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
@@ -132,7 +150,9 @@ echo "    ~/.cursor/hooks.json  (Draft entry only)"
 echo "    ~/.cursor/rules/draft-context.mdc"
 echo "    ~/.cursor/agents/draft-{researcher,executor,learner}.md"
 echo "    ~/.cursor/skills/draft-setup/  (/draft-setup skill)"
+echo "    ~/.cursor/skills/draft-learn/  (/draft-learn skill)"
 echo "    ~/.agents/skills/draft-setup/"
+echo "    ~/.agents/skills/draft-learn/"
 echo ""
 echo "  What was kept:"
 echo "    ~/.draft/workspace/  (your PM brain data is untouched)"

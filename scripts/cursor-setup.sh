@@ -240,7 +240,7 @@ else
     done
 fi
 
-# ── 6. Install draft-setup skill ───────────────────────────────────────────────
+# ── 6. Install Draft skills ─────────────────────────────────────────────────────
 
 log "Installing draft-setup skill..."
 
@@ -252,6 +252,16 @@ USER_AGENTS_SKILLS="$HOME/.agents/skills"
 mkdir -p "$USER_AGENTS_SKILLS/draft-setup"
 install_file "skills/draft-setup/SKILL.md" "$USER_AGENTS_SKILLS/draft-setup/SKILL.md"
 log "  Skill installed to $USER_AGENTS_SKILLS/draft-setup/SKILL.md"
+
+log "Installing draft-learn skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-learn"
+install_file "skills/draft-learn/SKILL.md" "$CURSOR_HOME/skills/draft-learn/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-learn/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-learn"
+install_file "skills/draft-learn/SKILL.md" "$USER_AGENTS_SKILLS/draft-learn/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-learn/SKILL.md"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
