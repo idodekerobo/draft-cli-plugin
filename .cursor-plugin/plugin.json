@@ -13,7 +13,8 @@
     ".cursor/rules/draft-context.mdc"
   ],
   "skills": [
-    "skills/draft-setup/SKILL.md"
+    "skills/draft-setup/SKILL.md",
+    "skills/draft-learn/SKILL.md"
   ],
   "agents": [
     "agents/draft-researcher.md",
