@@ -8,13 +8,13 @@
   "homepage": "https://draftai.us/",
   "metadata": {
     "description": "A persistent PM brain for Claude Code. Run /draft:setup once — every session starts with full product context.",
-    "version": "1.0.0-beta"
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "draft",
       "description": "AI-powered PM co-pilot. Persistent memory and context layer for Claude Code — helps founders and PMs think, write, and act on product work without re-explaining context every session.",
-      "version": "1.0.0-beta",
+      "version": "1.2.0",
       "source": "./",
       "strict": false,
       "author": {

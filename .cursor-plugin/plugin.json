@@ -1,7 +1,7 @@
 {
   "name": "draft",
   "displayName": "Draft — PM Brain for Cursor",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "description": "Persistent product memory for Cursor. Every session starts knowing your product, team, and priorities. Write PRDs, log decisions, and keep your PM context fresh — all without re-explaining yourself.",
   "author": "Idode Kerobo",
   "license": "MIT",
