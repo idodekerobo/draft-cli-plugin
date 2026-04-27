@@ -178,7 +178,7 @@ Draft uses an orchestrator + three sub-agents pattern. The pm-agent is the main 
 | `draft-executor` | Need to DO something — writes PRDs, decision docs, updates files |
 | `draft-learner` | Need to REMEMBER something — updates context files, logs decisions |
 
-Most requests follow: `draft-researcher` gathers context → `draft-executor` acts → `draft-learner` saves.
+Most requests follow: `draft-researcher` gathers context → `draft-executor` acts → `draft-learner` saves. You can also invoke `draft-learner` directly — run `/draft:learn` anytime to capture a decision, scope change, or anything worth remembering outside of a full PM session.
 
 ---
 
