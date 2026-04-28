@@ -7,7 +7,31 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [1.3.0] — 2026-04-27
+
+### Added — Self-update system
+
+- `VERSION` (repo root) — source of truth for the current release. Session hooks read this to record the installed version. The remote copy on `main` is what the update check compares against.
+- `scripts/draft-update-check.sh` — background version check. Compares `~/.draft/version` against the raw `VERSION` file on `main`. Writes `UP_TO_DATE <ver>` or `UPGRADE_AVAILABLE <old> <new>` to `~/.draft/last-update-check` with TTL caching (60 min if current, 720 min if upgrade available). Never blocks session start — fires as a background process.
+- `scripts/draft-update.sh` — self-update script. Fetches the latest release tag from the GitHub Releases API, detects installed platforms (Codex, Cursor) via sentinel files, and re-downloads all installed files at the new tag. Updates `~/.draft/version` and resets the update cache on completion. Never touches `~/.draft/workspace/` (user PM brain data).
+- `skills/draft-update/SKILL.md` — `/draft:update` slash command (`$draft-update` on Codex, `/draft-update` on Cursor). Shows current and available version, asks for confirmation, runs the update script, summarizes the CHANGELOG between old and new versions, reminds user to restart.
+
+### Changed
+
+- `scripts/session-init.sh` — records installed plugin version to `~/.draft/version` and copies `draft-update-check.sh` + `draft-update.sh` to `~/.draft/scripts/` on every Claude Code session start. Ensures Codex/Cursor users' shared scripts stay in sync with the Claude Code plugin version after a plugin update.
+- `scripts/inject-context.sh` — reads `~/.draft/last-update-check` and appends a `## Draft Update Available` notice to session context when an upgrade is waiting. Fires update check in background at session end so the result is cached for next session.
+- `scripts/cursor-session-start.sh` — same update notice logic added to the `additional_context` JSON output. Also fires background update check.
+- `scripts/codex-setup.sh` — installs shared update scripts to `~/.draft/scripts/`, installs `draft-update` skill to `~/.agents/skills/draft-update/`, records installed version to `~/.draft/version`.
+- `scripts/cursor-setup.sh` — same additions; also installs `draft-update` skill to `~/.cursor/skills/draft-update/`.
+- `scripts/codex-uninstall.sh` — removes `draft-update` skill; cleans up `~/.draft/scripts/` and `~/.draft/last-update-check` unless Cursor is also installed.
+- `scripts/cursor-uninstall.sh` — same; checks for Codex before removing shared scripts.
+- `agents/pm-agent.md` — added explicit instruction to surface update notifications when `## Draft Update Available` is present in session context.
+
+**Release workflow (for maintainer):**
+1. Bump `VERSION` and `version` in `.claude-plugin/plugin.json`
+2. Commit and push
+3. `git tag v1.x.x && git push origin v1.x.x`
+4. `gh release create v1.x.x --title "v1.x.x" --notes "..."`
 
 ---
 

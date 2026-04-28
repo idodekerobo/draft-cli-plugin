@@ -16,6 +16,8 @@ CURSOR_SKILL_DIR="$CURSOR_HOME/skills/draft-setup"
 AGENTS_SKILL_DIR="$HOME/.agents/skills/draft-setup"
 CURSOR_LEARN_SKILL_DIR="$CURSOR_HOME/skills/draft-learn"
 AGENTS_LEARN_SKILL_DIR="$HOME/.agents/skills/draft-learn"
+CURSOR_UPDATE_SKILL_DIR="$CURSOR_HOME/skills/draft-update"
+AGENTS_UPDATE_SKILL_DIR="$HOME/.agents/skills/draft-update"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -136,8 +138,37 @@ else
     warn "Skill not found at $AGENTS_LEARN_SKILL_DIR — skipping."
 fi
 
+if [ -d "$CURSOR_UPDATE_SKILL_DIR" ]; then
+    rm -rf "$CURSOR_UPDATE_SKILL_DIR"
+    log "Removed skill at $CURSOR_UPDATE_SKILL_DIR"
+else
+    warn "Skill not found at $CURSOR_UPDATE_SKILL_DIR — skipping."
+fi
+
+if [ -d "$AGENTS_UPDATE_SKILL_DIR" ]; then
+    rm -rf "$AGENTS_UPDATE_SKILL_DIR"
+    log "Removed skill at $AGENTS_UPDATE_SKILL_DIR"
+else
+    warn "Skill not found at $AGENTS_UPDATE_SKILL_DIR — skipping."
+fi
+
 rmdir "$HOME/.agents/skills" 2>/dev/null || true
 rmdir "$HOME/.agents" 2>/dev/null || true
+
+# ── Remove shared scripts (only if Codex is not also installed) ────────────────
+
+if [ ! -f "$HOME/.codex/agents/draft-researcher.toml" ]; then
+    if [ -d "$HOME/.draft/scripts" ]; then
+        rm -rf "$HOME/.draft/scripts"
+        log "Removed ~/.draft/scripts/"
+    fi
+    if [ -f "$HOME/.draft/last-update-check" ]; then
+        rm -f "$HOME/.draft/last-update-check"
+        log "Removed ~/.draft/last-update-check"
+    fi
+else
+    warn "Codex install detected — keeping ~/.draft/scripts/ and ~/.draft/last-update-check."
+fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 

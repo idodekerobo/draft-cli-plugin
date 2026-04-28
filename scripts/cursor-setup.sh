@@ -263,6 +263,39 @@ mkdir -p "$USER_AGENTS_SKILLS/draft-learn"
 install_file "skills/draft-learn/SKILL.md" "$USER_AGENTS_SKILLS/draft-learn/SKILL.md"
 log "  Skill installed to $USER_AGENTS_SKILLS/draft-learn/SKILL.md"
 
+# ── 7. Install shared update scripts ──────────────────────────────────────────
+# Installed to ~/.draft/scripts/ — accessible from all platforms.
+
+log "Installing shared update scripts..."
+mkdir -p "$HOME/.draft/scripts"
+install_file "scripts/draft-update-check.sh" "$HOME/.draft/scripts/draft-update-check.sh"
+install_file "scripts/draft-update.sh" "$HOME/.draft/scripts/draft-update.sh"
+chmod +x "$HOME/.draft/scripts/"*.sh
+log "  Scripts installed to ~/.draft/scripts/"
+
+# ── 8. Install draft:update skill ─────────────────────────────────────────────
+
+log "Installing draft:update skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-update"
+install_file "skills/draft-update/SKILL.md" "$CURSOR_HOME/skills/draft-update/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-update/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-update"
+install_file "skills/draft-update/SKILL.md" "$USER_AGENTS_SKILLS/draft-update/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-update/SKILL.md"
+
+# ── 9. Record installed version ────────────────────────────────────────────────
+
+log "Recording installed version..."
+if [ "$USE_LOCAL" = true ]; then
+    DRAFT_VERSION=$(cat "$PLUGIN_ROOT/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+else
+    DRAFT_VERSION=$(curl -fsSL "$GITHUB_RAW/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+fi
+echo "$DRAFT_VERSION" > "$HOME/.draft/version"
+log "  Version $DRAFT_VERSION recorded at ~/.draft/version"
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""

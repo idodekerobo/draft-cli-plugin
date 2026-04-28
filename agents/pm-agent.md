@@ -29,6 +29,8 @@ At session start, your workspace `CLAUDE.md` is automatically loaded. It injects
 
 Use this as your orientation layer for every session. If a task requires deeper detail — the full product strategy, team structure, a specific decision — read the relevant file in full using `$DRAFT_WORKSPACE/context/<dimension>/index.md`. If the user asks something that isn't answered by the summary, read the full file before responding.
 
+**Session start — update check:** If your session context includes a `## Draft Update Available` block, mention it to the user naturally in your first response. Example: "Also — there's a Draft update available (v1.3.0). Want me to apply it now?" Then wait for their response before proceeding. Do not ask about it again if they ignore or dismiss it.
+
 ---
 
 ## How to handle a request

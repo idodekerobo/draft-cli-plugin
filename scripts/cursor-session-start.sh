@@ -94,5 +94,25 @@ if mem_file.exists():
 else:
     parts.append("No memory yet.")
 
+# ── Update notification ────────────────────────────────────────────────────────
+import pathlib as _pl
+_last_check = _pl.Path.home() / ".draft" / "last-update-check"
+if _last_check.exists():
+    try:
+        _check = _last_check.read_text().strip().split()
+        if len(_check) >= 3 and _check[0] == "UPGRADE_AVAILABLE":
+            _old_ver, _new_ver = _check[1], _check[2]
+            parts.append("")
+            parts.append("## Draft Update Available")
+            parts.append(f"v{_new_ver} is available (currently on v{_old_ver}). Mention this to the user and offer to run `/draft-update` to upgrade.")
+    except Exception:
+        pass
+
 print(json.dumps({"additional_context": "\n".join(parts)}))
 PYEOF
+
+# Fire background update check — never blocks session start.
+# Writes fresh result to ~/.draft/last-update-check for the next session.
+if [ -f "$HOME/.draft/scripts/draft-update-check.sh" ]; then
+    bash "$HOME/.draft/scripts/draft-update-check.sh" >/dev/null 2>&1 &
+fi

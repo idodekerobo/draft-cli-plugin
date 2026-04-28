@@ -25,6 +25,26 @@ if [ ! -d "$WORKSPACE" ]; then
     echo "[Draft] Workspace ready. Run /draft:setup to load your PM brain." >&2
 fi
 
+# ── 1b. Record installed version ──────────────────────────────────────────────
+# CLAUDE_PLUGIN_ROOT is set by Claude Code when running hooks (already used above for TEMPLATE).
+# Runs every session so the recorded version always matches the installed plugin.
+
+PLUGIN_VERSION=$(cat "${CLAUDE_PLUGIN_ROOT}/VERSION" 2>/dev/null || echo "unknown")
+mkdir -p "$HOME/.draft"
+echo "$PLUGIN_VERSION" > "$HOME/.draft/version"
+
+# ── 1c. Install shared scripts ─────────────────────────────────────────────────
+# Copies update scripts to ~/.draft/scripts/ so they're accessible from all platforms.
+# Runs every session so Codex/Cursor users always get the latest version after a Claude Code update.
+# Guarded: skips gracefully if scripts aren't present in this plugin version yet.
+
+if [ -f "${CLAUDE_PLUGIN_ROOT}/scripts/draft-update-check.sh" ]; then
+    mkdir -p "$HOME/.draft/scripts"
+    cp "${CLAUDE_PLUGIN_ROOT}/scripts/draft-update-check.sh" "$HOME/.draft/scripts/draft-update-check.sh"
+    cp "${CLAUDE_PLUGIN_ROOT}/scripts/draft-update.sh" "$HOME/.draft/scripts/draft-update.sh"
+    chmod +x "$HOME/.draft/scripts/draft-update-check.sh" "$HOME/.draft/scripts/draft-update.sh"
+fi
+
 # ── 2. Configure ~/.claude/settings.json (one-time) ──────────────────────────
 # Adds DRAFT_WORKSPACE env var, additionalDirectories (file access), and
 # ~/.draft/** read/write/edit permissions.

@@ -165,6 +165,47 @@ bash ./scripts/cursor-uninstall.sh
 
 ---
 
+## Keeping Draft up to date
+
+Draft checks for updates automatically in the background on every session start. When a new version is available, your pm-agent will mention it at the start of your next session and offer to apply the update.
+
+### Check and apply an update
+
+**Claude Code:**
+```
+/draft:update
+```
+
+**Codex:**
+```
+$draft-update
+```
+
+**Cursor:**
+```
+/draft-update
+```
+
+The update command shows what version you're on, what's available, and asks for confirmation before doing anything. It downloads the new files, updates your install, and tells you what changed. You'll need to restart your session for changes to take effect.
+
+The update never touches your PM brain data at `~/.draft/workspace/` — only the plugin files themselves are updated.
+
+### How version tracking works
+
+- Your installed version is recorded at `~/.draft/version` when you first install
+- The update check fetches the latest `VERSION` from the GitHub repo and compares (runs in background, cached for 60–720 minutes)
+- The update script re-downloads files at the exact tagged release version — no moving targets
+
+### Release workflow (for contributors)
+
+```bash
+# Bump VERSION and .claude-plugin/plugin.json, then:
+git tag v1.x.x && git push origin v1.x.x
+gh release create v1.x.x --title "v1.x.x" --notes "..."
+```
+
+---
+
 ## How it works
 
 ### Agent architecture

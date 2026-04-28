@@ -16,6 +16,7 @@ set -euo pipefail
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 USER_SKILL_DIR="$HOME/.agents/skills/draft-setup"
 USER_LEARN_SKILL_DIR="$HOME/.agents/skills/draft-learn"
+USER_UPDATE_SKILL_DIR="$HOME/.agents/skills/draft-update"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -124,8 +125,30 @@ else
     warn "Skill not found at $USER_LEARN_SKILL_DIR — skipping."
 fi
 
+if [ -d "$USER_UPDATE_SKILL_DIR" ]; then
+    rm -rf "$USER_UPDATE_SKILL_DIR"
+    log "Removed skill at $USER_UPDATE_SKILL_DIR"
+else
+    warn "Skill not found at $USER_UPDATE_SKILL_DIR — skipping."
+fi
+
 rmdir "$HOME/.agents/skills" 2>/dev/null || true
 rmdir "$HOME/.agents" 2>/dev/null || true
+
+# ── Remove shared scripts (only if Cursor is not also installed) ───────────────
+
+if [ ! -f "$HOME/.cursor/hooks/draft/cursor-session-start.sh" ]; then
+    if [ -d "$HOME/.draft/scripts" ]; then
+        rm -rf "$HOME/.draft/scripts"
+        log "Removed ~/.draft/scripts/"
+    fi
+    if [ -f "$HOME/.draft/last-update-check" ]; then
+        rm -f "$HOME/.draft/last-update-check"
+        log "Removed ~/.draft/last-update-check"
+    fi
+else
+    warn "Cursor install detected — keeping ~/.draft/scripts/ and ~/.draft/last-update-check."
+fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
