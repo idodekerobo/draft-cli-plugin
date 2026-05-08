@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main"
+GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/${DRAFT_BRANCH:-main}"
 CURSOR_HOME="${CURSOR_HOME:-$HOME/.cursor}"
 DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
 

@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main"
+GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/${DRAFT_BRANCH:-main}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
 
