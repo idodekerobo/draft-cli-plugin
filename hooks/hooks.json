@@ -5,11 +5,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh\""
+            "command": "if [ \"${OS:-}\" = 'Windows_NT' ]; then powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/session-init.ps1\"; else bash \"${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh\"; fi"
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/inject-context.sh\""
+            "command": "if [ \"${OS:-}\" = 'Windows_NT' ]; then powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/inject-context.ps1\"; else bash \"${CLAUDE_PLUGIN_ROOT}/scripts/inject-context.sh\"; fi"
           }
         ]
       }
