@@ -61,6 +61,13 @@ curl -fsSL "$GITHUB_RAW/scripts/draft-update.sh" -o "$DRAFT_DIR/scripts/draft-up
 chmod +x "$DRAFT_DIR/scripts/"*.sh
 log "  Shared scripts updated at ~/.draft/scripts/"
 
+# Also update Windows PowerShell scripts if present
+for ps_script in draft-update-check draft-update; do
+    if [ -f "$DRAFT_DIR/scripts/$ps_script.ps1" ]; then
+        curl -fsSL "$GITHUB_RAW/scripts/$ps_script.ps1" -o "$DRAFT_DIR/scripts/$ps_script.ps1"
+    fi
+done
+
 # ── Codex: update if installed ────────────────────────────────────────────────
 
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
@@ -90,6 +97,11 @@ if [ -f "$CURSOR_HOME/hooks/draft/cursor-session-start.sh" ]; then
     curl -fsSL "$GITHUB_RAW/scripts/cursor-session-start.sh" \
         -o "$CURSOR_HOME/hooks/draft/cursor-session-start.sh"
     chmod +x "$CURSOR_HOME/hooks/draft/cursor-session-start.sh"
+    # Also update Windows PowerShell hook if present
+    if [ -f "$CURSOR_HOME/hooks/draft/cursor-session-start.ps1" ]; then
+        curl -fsSL "$GITHUB_RAW/scripts/cursor-session-start.ps1" \
+            -o "$CURSOR_HOME/hooks/draft/cursor-session-start.ps1"
+    fi
     if [ -f "$CURSOR_HOME/rules/draft-context.mdc" ]; then
         curl -fsSL "$GITHUB_RAW/.cursor/rules/draft-context.mdc" \
             -o "$CURSOR_HOME/rules/draft-context.mdc"
