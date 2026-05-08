@@ -2,7 +2,7 @@
 
 **Draft is a PM brain for Claude Code, Codex CLI, and Cursor.** Install it once, run `/setup`, and every session starts with full product context — no re-explaining required.
 
-> **Platform support: macOS and Linux only.** The plugin's session hook is a bash script and requires a POSIX shell environment. Windows (including WSL) is untested and not currently supported.
+> **Platform support: macOS, Linux, and Windows (beta).** The Claude Code plugin works natively on Windows — the session hook auto-detects the OS and runs PowerShell scripts. Codex and Cursor setup on Windows requires [Git Bash](https://git-scm.com/downloads/win) (bundled with Git for Windows).
 
 ---
 
@@ -22,11 +22,15 @@
 curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/codex-setup.sh | bash
 ```
 
+> **Installing from a beta branch?** Set `DRAFT_BRANCH=<your-branch>` and replace `main` with your branch name in the URL above.
+
 Restart Codex, then run:
 
 ```
 $draft-setup
 ```
+
+> **Windows:** Run this in [Git Bash](https://git-scm.com/downloads/win). PowerShell-native setup coming in a future release.
 
 ### Cursor
 
@@ -34,7 +38,11 @@ $draft-setup
 curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/cursor-setup.sh | bash
 ```
 
+> **Installing from a beta branch?** Set `DRAFT_BRANCH=<your-branch>` and replace `main` with your branch name in the URL above.
+
 Restart Cursor. Your product context loads automatically into every new Composer session — no action needed. If this is your first time using Draft, run `/draft-setup` in the Agent tab.
+
+> **Windows:** Run this in [Git Bash](https://git-scm.com/downloads/win). PowerShell-native setup coming in a future release.
 
 ---
 
@@ -82,6 +90,8 @@ claude --plugin-dir ./draft-cli-plugin
 
 The plugin's `SessionStart` hook handles everything else automatically on first launch.
 
+> **Windows:** Claude Code plugin works natively on Windows. Install via the marketplace or `--plugin-dir` as normal. The `SessionStart` hook auto-detects Windows and runs PowerShell (`.ps1`) scripts instead of bash — no extra steps required.
+
 ---
 
 ### Codex
@@ -93,6 +103,10 @@ This is a **direct install**, not a Codex plugin. The setup script writes direct
 ```bash
 curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/codex-setup.sh | bash
 ```
+
+> **Installing from a beta branch?** Set `DRAFT_BRANCH=<your-branch>` and replace `main` with your branch name in the URL above.
+
+> **Windows:** Run in Git Bash. The setup script installs `inject-context.ps1` alongside the bash hook, so context injection works natively in PowerShell on session start.
 
 **Option 2 — from a local clone:**
 
@@ -134,6 +148,10 @@ This is a **direct install** into `~/.cursor/`. The setup script is smart about 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main/scripts/cursor-setup.sh | bash
 ```
+
+> **Installing from a beta branch?** Set `DRAFT_BRANCH=<your-branch>` and replace `main` with your branch name in the URL above.
+
+> **Windows:** Run in Git Bash. The setup script installs `inject-context.ps1` alongside the bash hook, so context injection works natively in PowerShell on session start.
 
 **Option 2 — from a local clone:**
 
@@ -329,7 +347,8 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 
 | Editor | Hook mechanism | Output format |
 |---|---|---|
-| Claude Code | `SessionStart` → `inject-context.sh` | Raw text into session context |
+| Claude Code (macOS/Linux) | `SessionStart` → `inject-context.sh` | Raw text into session context |
+| Claude Code (Windows) | `SessionStart` → `inject-context.ps1` | Raw text into session context |
 | Codex | `SessionStart` → `inject-context.sh` | Raw text as developer context |
 | Cursor | `sessionStart` → `cursor-session-start.sh` | `{ "additional_context": "..." }` JSON into initial system context |
 
@@ -348,6 +367,20 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 
 1. `session-init.sh` guards pass, exits in <10ms
 2. `inject-context.sh` runs — outputs live workspace snapshot into session context
+3. `draft:pm-agent` activates as main thread
+4. pm-agent is oriented: context dimensions, freshness, priorities, memory
+
+#### Claude Code — Windows (first session)
+
+1. **`SessionStart` hook fires** → bash dispatcher detects `$OS = Windows_NT` → runs `scripts/session-init.ps1`
+2. **Workspace bootstrap** (guarded — runs once): copies `workspace-template/` → `~\.draft\workspace\`
+3. **`~/.claude/settings.json` updated** (guarded — runs once): sets `DRAFT_WORKSPACE` env var, adds workspace to `additionalDirectories`, grants `Read/Write/Edit` for `~/.draft/**`
+4. Settings take effect on the next session start
+
+#### Claude Code — Windows (every subsequent session)
+
+1. `session-init.ps1` guards pass, exits in <10ms
+2. `inject-context.ps1` runs — outputs live workspace snapshot into session context
 3. `draft:pm-agent` activates as main thread
 4. pm-agent is oriented: context dimensions, freshness, priorities, memory
 
@@ -409,13 +442,19 @@ draft-cli-plugin/
 ├── hooks/
 │   └── hooks.json                Claude Code SessionStart hooks config
 ├── scripts/
-│   ├── session-init.sh           Claude Code — guarded bootstrap + settings config
-│   ├── inject-context.sh         Claude Code + Codex — context injection hook
+│   ├── session-init.sh           Claude Code — guarded bootstrap + settings config (macOS/Linux)
+│   ├── session-init.ps1          Claude Code — guarded bootstrap + settings config (Windows)
+│   ├── inject-context.sh         Claude Code + Codex — context injection hook (macOS/Linux)
+│   ├── inject-context.ps1        Claude Code — context injection hook (Windows)
 │   ├── cursor-session-start.sh   Cursor — context injection hook (JSON output)
 │   ├── codex-setup.sh            Codex — one-time setup
 │   ├── codex-uninstall.sh        Codex — removes everything codex-setup.sh installed
 │   ├── cursor-setup.sh           Cursor — one-time setup
-│   └── cursor-uninstall.sh       Cursor — removes everything cursor-setup.sh installed
+│   ├── cursor-uninstall.sh       Cursor — removes everything cursor-setup.sh installed
+│   ├── draft-update-check.sh     Update check (macOS/Linux)
+│   ├── draft-update-check.ps1    Update check (Windows)
+│   ├── draft-update.sh           Self-update (macOS/Linux)
+│   └── draft-update.ps1          Self-update (Windows)
 ├── workspace-template/           Blank workspace, copied to ~/.draft/workspace on first run
 │   ├── CLAUDE.md
 │   ├── context/
