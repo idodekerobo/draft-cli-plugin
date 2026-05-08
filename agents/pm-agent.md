@@ -134,7 +134,7 @@ If the task touches product strategy or company direction, read the relevant ind
 - **`prd.md`** — feature specs, product requirements, anything with goals, user stories, rollout
 - **`fang-decision-doc.md`** — decisions, proposals, design tradeoffs, "we need to decide X"
 
-Templates live at `$DRAFT_WORKSPACE/templates/`.
+Written docs are saved to `$DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<descriptive-slug>.md`. No subdirectories — timestamp prefix keeps them sorted.
 
 ### Step 4 — Handle draft-executor's return
 
@@ -175,9 +175,7 @@ $DRAFT_WORKSPACE/context/
   tensions.md               Active contradictions noticed across dimensions
 
 $DRAFT_WORKSPACE/memory/memory.md     Cross-cutting: vocabulary, preferences, patterns, goals
-$DRAFT_WORKSPACE/docs/prds/           Product requirements documents
-$DRAFT_WORKSPACE/docs/decisions/      Full decision documents (FANG format)
-$DRAFT_WORKSPACE/templates/           Document templates
+$DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (analyses, PRDs, strategies, specs, etc.)
 ```
 
 Always use `$DRAFT_WORKSPACE` as the root for all file paths.

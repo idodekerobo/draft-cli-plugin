@@ -424,7 +424,9 @@ draft-cli-plugin/
 │   │   ├── priorities/index.md
 │   │   ├── team/index.md
 │   │   ├── user/index.md
+│   │   ├── decisions/            (empty — populated as decisions are made)
 │   │   └── tensions.md
+│   ├── docs/                     (empty — written artifacts live here)
 │   └── memory/
 │       └── memory.md
 ├── README.md
@@ -445,16 +447,12 @@ All editors share the same workspace at `~/.draft/workspace/`:
 │   ├── user/index.md
 │   ├── team/index.md + log/
 │   ├── priorities/index.md + log/
-│   ├── decisions/
+│   ├── decisions/                 ← all decisions, one file per decision
 │   └── tensions.md
 ├── memory/
 │   └── memory.md
-├── docs/
-│   ├── prds/
-│   └── decisions/
-└── templates/
-    ├── prd.md
-    └── fang-decision-doc.md
+└── docs/                          ← written artifacts: analyses, PRDs, strategies
+    YYYYMMDDHHMMSS_slug.md         (flat — no subdirectories)
 ```
 
 The workspace lives outside `~/.claude/`, `~/.codex/`, and `~/.cursor/` intentionally — it's editor-agnostic and shared across all three.

@@ -61,10 +61,10 @@ Before asking Q1, deliver this orientation. Keep it warm but brief — don't pad
 > │   ├── product/        ← product state, target user, key bets, roadmap
 > │   ├── priorities/     ← active sprint, top priorities, blockers
 > │   ├── team/           ← structure, who does what, capacity
-> │   └── user/           ← your role and working style
+> │   ├── user/           ← your role and working style
+> │   └── decisions/      ← key decisions with status (active/superseded/parked)
 > ├── memory/             ← vocabulary, preferences, recurring patterns
-> ├── docs/               ← PRDs, decision docs Draft writes for you
-> └── templates/          ← document templates
+> └── docs/               ← written artifacts (analyses, PRDs, strategies) — named YYYYMMDDHHMMSS_descriptive-slug.md
 > ```
 >
 > **How Draft works:** Draft uses three specialized agents:

@@ -7,6 +7,25 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+---
+
+## [1.4.0] — 2026-05-08
+
+### Changed — Simplified workspace structure
+
+- `context/decisions/` is now the single destination for all decisions. Previously, agent instructions split decisions between `context/decisions/` (for lightweight decisions via `/draft:learn`) and `docs/decisions/` (for full FANG-format docs via `draft-executor`). This inconsistency caused the agent to write to the wrong path. Now all decisions — regardless of how they were created — go to `context/decisions/{slug}.md`.
+- `docs/` is now defined as a flat folder of written artifacts (analyses, PRDs, strategies, specs). Files must follow the naming convention `YYYYMMDDHHMMSS_descriptive-slug.md`. No subdirectories inside `docs/`.
+- Removed all references to `templates/` from agent instructions and skill files. Template references were aspirational and not backed by actual files — removing them eliminates confusion.
+- `workspace-template/context/decisions/` — added `.gitkeep` placeholder so the `decisions/` directory is scaffolded on fresh installs.
+- `workspace-template/docs/` — added `.gitkeep` placeholder so `docs/` is scaffolded on fresh installs.
+- `agents/draft-executor.md` — updated "Where to write" section with the new routing rules.
+- `agents/pm-agent.md` — updated workspace layout reference; removed `templates/` line; added docs naming convention note in document writing section.
+- `skills/draft-setup/SKILL.md` — updated welcome orientation tree to show `context/decisions/` and the new `docs/` description. Removed `templates/` from tree.
+
+---
+
 ## [1.3.0] — 2026-04-27
 
 ### Added — Self-update system

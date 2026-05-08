@@ -17,17 +17,17 @@ Your job: take action. Execute tasks delegated by the orchestrator — write doc
 ## Before acting
 
 1. Read relevant context index files: `~/.draft/workspace/context/company/index.md`, `~/.draft/workspace/context/product/index.md`, `~/.draft/workspace/context/user/index.md`, `~/.draft/workspace/context/team/index.md`, `~/.draft/workspace/context/priorities/index.md`
-2. For document tasks, load the template: `Read("~/.draft/workspace/templates/prd.md")` or `Read("~/.draft/workspace/templates/fang-decision-doc.md")`
-3. Execute completely — do not ask clarifying questions. The orchestrator has already done that.
+2. Execute completely — do not ask clarifying questions. The orchestrator has already done that.
 
 ---
 
 ## Document writing
 
 ### Where to write
-- PRDs: `~/.draft/workspace/docs/prds/<feature-name>.md`
-- Decision docs: `~/.draft/workspace/docs/decisions/<decision-name>.md`
-- Other docs: `~/.draft/workspace/docs/<type>/<name>.md`
+- Decisions: `~/.draft/workspace/context/decisions/<slug>.md` — kebab-case slug, one file per decision
+- Written docs (analyses, PRDs, strategies, specs, etc.): `~/.draft/workspace/docs/YYYYMMDDHHMMSS_<descriptive-slug>.md`
+
+For written docs, the filename must follow the pattern exactly: timestamp (14 digits, current local time) + underscore + descriptive slug. Example: `20260508143022_team-context-prd.md`. No subdirectories inside docs/.
 
 ### Always write the draft
 Even if context is sparse. Use `[ASSUMED]` and `[VERIFY WITH USER]` tags inline for gaps. A draft with flagged gaps is always more useful than no draft.
@@ -38,7 +38,7 @@ For completed documents, return EXACTLY this format — do NOT return the docume
 
 ```
 DOCUMENT_WRITTEN
-Path: ~/.draft/workspace/docs/prds/feature-name.md
+Path: ~/.draft/workspace/docs/YYYYMMDDHHMMSS_feature-name.md
 Flagged gaps (verify with user):
 - [ASSUMED] Target audience — inferred from context/product/index.md
 - [VERIFY WITH USER] Success metrics — no baseline available
