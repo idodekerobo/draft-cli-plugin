@@ -1,7 +1,0 @@
-## Vocabulary
-
-## Preferences
-
-## Goals
-
-## Patterns
