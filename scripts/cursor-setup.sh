@@ -108,16 +108,14 @@ if [ ! -d "$DRAFT_WORKSPACE" ]; then
     mkdir -p \
         "$DRAFT_WORKSPACE/context/company/log" \
         "$DRAFT_WORKSPACE/context/product/log" \
-        "$DRAFT_WORKSPACE/context/user" \
         "$DRAFT_WORKSPACE/context/team/log" \
         "$DRAFT_WORKSPACE/context/priorities/log" \
         "$DRAFT_WORKSPACE/context/decisions" \
-        "$DRAFT_WORKSPACE/memory" \
-        "$DRAFT_WORKSPACE/docs/prds" \
-        "$DRAFT_WORKSPACE/docs/decisions" \
-        "$DRAFT_WORKSPACE/templates"
+        "$DRAFT_WORKSPACE/personal/user" \
+        "$DRAFT_WORKSPACE/personal/wip" \
+        "$DRAFT_WORKSPACE/docs"
 
-    for dim in company product user team priorities; do
+    for dim in company product team priorities; do
         cat > "$DRAFT_WORKSPACE/context/$dim/index.md" <<EOF
 ---
 name: $dim
@@ -135,7 +133,17 @@ EOF
 Active contradictions and inconsistencies noticed across context dimensions.
 EOF
 
-    cat > "$DRAFT_WORKSPACE/memory/memory.md" <<'EOF'
+    cat > "$DRAFT_WORKSPACE/personal/user/index.md" <<'EOF'
+---
+name: user
+description: >
+  No information recorded yet.
+last_updated: ""
+source: ""
+---
+EOF
+
+    cat > "$DRAFT_WORKSPACE/personal/memory.md" <<'EOF'
 ---
 name: memory
 description: Vocabulary, working preferences, and non-obvious patterns.
@@ -262,6 +270,36 @@ log "  Skill installed to $CURSOR_HOME/skills/draft-learn/SKILL.md"
 mkdir -p "$USER_AGENTS_SKILLS/draft-learn"
 install_file "skills/draft-learn/SKILL.md" "$USER_AGENTS_SKILLS/draft-learn/SKILL.md"
 log "  Skill installed to $USER_AGENTS_SKILLS/draft-learn/SKILL.md"
+
+log "Installing draft-setup-collab skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-setup-collab"
+install_file "skills/draft-setup-collab/SKILL.md" "$CURSOR_HOME/skills/draft-setup-collab/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-setup-collab/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-setup-collab"
+install_file "skills/draft-setup-collab/SKILL.md" "$USER_AGENTS_SKILLS/draft-setup-collab/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-setup-collab/SKILL.md"
+
+log "Installing draft-publish-team skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-publish-team"
+install_file "skills/draft-publish-team/SKILL.md" "$CURSOR_HOME/skills/draft-publish-team/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-publish-team/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-publish-team"
+install_file "skills/draft-publish-team/SKILL.md" "$USER_AGENTS_SKILLS/draft-publish-team/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-publish-team/SKILL.md"
+
+log "Installing draft-load-team skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-load-team"
+install_file "skills/draft-load-team/SKILL.md" "$CURSOR_HOME/skills/draft-load-team/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-load-team/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-load-team"
+install_file "skills/draft-load-team/SKILL.md" "$USER_AGENTS_SKILLS/draft-load-team/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-load-team/SKILL.md"
 
 # ── 7. Install shared update scripts ──────────────────────────────────────────
 # Installed to ~/.draft/scripts/ — accessible from all platforms.

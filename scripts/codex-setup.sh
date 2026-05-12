@@ -81,16 +81,14 @@ if [ ! -d "$DRAFT_WORKSPACE" ]; then
     mkdir -p \
         "$DRAFT_WORKSPACE/context/company/log" \
         "$DRAFT_WORKSPACE/context/product/log" \
-        "$DRAFT_WORKSPACE/context/user" \
         "$DRAFT_WORKSPACE/context/team/log" \
         "$DRAFT_WORKSPACE/context/priorities/log" \
         "$DRAFT_WORKSPACE/context/decisions" \
-        "$DRAFT_WORKSPACE/memory" \
-        "$DRAFT_WORKSPACE/docs/prds" \
-        "$DRAFT_WORKSPACE/docs/decisions" \
-        "$DRAFT_WORKSPACE/templates"
+        "$DRAFT_WORKSPACE/personal/user" \
+        "$DRAFT_WORKSPACE/personal/wip" \
+        "$DRAFT_WORKSPACE/docs"
 
-    for dim in company product user team priorities; do
+    for dim in company product team priorities; do
         cat > "$DRAFT_WORKSPACE/context/$dim/index.md" <<EOF
 ---
 name: $dim
@@ -108,7 +106,17 @@ EOF
 Active contradictions and inconsistencies noticed across context dimensions.
 EOF
 
-    cat > "$DRAFT_WORKSPACE/memory/memory.md" <<'EOF'
+    cat > "$DRAFT_WORKSPACE/personal/user/index.md" <<'EOF'
+---
+name: user
+description: >
+  No information recorded yet.
+last_updated: ""
+source: ""
+---
+EOF
+
+    cat > "$DRAFT_WORKSPACE/personal/memory.md" <<'EOF'
 ---
 name: memory
 description: Vocabulary, working preferences, and non-obvious patterns.
@@ -253,6 +261,21 @@ log "Installing draft:learn skill..."
 mkdir -p "$USER_SKILLS_DIR/draft-learn"
 install_file "skills/draft-learn/SKILL.md" "$USER_SKILLS_DIR/draft-learn/SKILL.md"
 log "  Skill installed to $USER_SKILLS_DIR/draft-learn/SKILL.md"
+
+log "Installing draft:setup-collab skill..."
+mkdir -p "$USER_SKILLS_DIR/draft-setup-collab"
+install_file "skills/draft-setup-collab/SKILL.md" "$USER_SKILLS_DIR/draft-setup-collab/SKILL.md"
+log "  Skill installed to $USER_SKILLS_DIR/draft-setup-collab/SKILL.md"
+
+log "Installing draft:publish-team skill..."
+mkdir -p "$USER_SKILLS_DIR/draft-publish-team"
+install_file "skills/draft-publish-team/SKILL.md" "$USER_SKILLS_DIR/draft-publish-team/SKILL.md"
+log "  Skill installed to $USER_SKILLS_DIR/draft-publish-team/SKILL.md"
+
+log "Installing draft:load-team skill..."
+mkdir -p "$USER_SKILLS_DIR/draft-load-team"
+install_file "skills/draft-load-team/SKILL.md" "$USER_SKILLS_DIR/draft-load-team/SKILL.md"
+log "  Skill installed to $USER_SKILLS_DIR/draft-load-team/SKILL.md"
 
 # ── 8. Install shared update scripts ──────────────────────────────────────────
 # Installed to ~/.draft/scripts/ — accessible from all platforms (Codex, Cursor, Claude Code).

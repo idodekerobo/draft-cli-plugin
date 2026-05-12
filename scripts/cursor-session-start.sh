@@ -36,7 +36,7 @@ from pathlib import Path
 
 ws = os.environ.get("DRAFT_WORKSPACE", os.path.expanduser("~/.draft/workspace"))
 ctx_dir = Path(ws) / "context"
-mem_file = Path(ws) / "memory" / "memory.md"
+mem_file = Path(ws) / "personal" / "memory.md"
 
 parts = ["# Draft — Workspace Context", ""]
 
