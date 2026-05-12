@@ -223,9 +223,68 @@ Most requests follow: `draft-researcher` gathers context → `draft-executor` ac
 
 ---
 
+## Team collaboration
+
+Draft supports sharing your product context layer with teammates via a shared private GitHub repo. One person — the **curator** — owns and publishes the context. Everyone else **loads** it at the start of their session. It's not multiplayer editing — it's a shared context layer for AI sessions.
+
+**Single curator, N readers.** Multi-curator is coming.
+
+### Roles
+
+| Role | What they do |
+|---|---|
+| Curator | Runs `/draft:setup-collab` to configure the shared repo, `/publish-team` to push updates |
+| Teammate | Runs `/draft:setup-collab` to connect to the shared repo, `/load-team` to pull updates |
+
+### Setup (curator)
+
+```
+/draft:setup-collab
+```
+
+This checks gh CLI auth, lets you choose or create a shared private GitHub repo, and seeds it with your current context. At the end, it gives you a URL to share with teammates.
+
+Alternatively, the collaboration question is asked automatically during the `/draft:setup` interview (Q5.5). Answering yes invokes `/draft:setup-collab` inline.
+
+### Setup (teammate)
+
+```
+/draft:setup-collab
+```
+
+Same command. When you paste the shared repo URL, Draft detects that it already has content and configures you as a teammate (read-only). Run `/load-team` to pull the latest context.
+
+### Publishing and loading
+
+```
+/publish-team     → curator: push your latest context to the shared repo
+/load-team        → teammate: pull the latest context from the shared repo
+```
+
+After `/load-team`, your `context/` IS the shared brain. The agent's next session starts with the curator's full product context already loaded.
+
+### What's shared vs. what stays local
+
+| Layer | What it contains | Shared? |
+|---|---|---|
+| `context/` | Company, product, team, priorities, decisions | Yes — curator publishes, teammates load |
+| `personal/` | Your working style, AI learnings, WIP drafts | No — always local-only |
+| `config/collaboration.md` | Repo URL, teammates list | Yes — propagates via the shared repo |
+| `config/local.md` | gh auth status, last_published, last_loaded | No — machine state, never pushed |
+
+### Platform invocation
+
+| Platform | Curator | Teammate |
+|---|---|---|
+| Claude Code | `/draft:setup-collab` · `/publish-team` | `/draft:setup-collab` · `/load-team` |
+| Codex | `$draft-setup-collab` · `$draft-publish-team` | `$draft-setup-collab` · `$draft-load-team` |
+| Cursor | `/draft-setup-collab` · `/draft-publish-team` | `/draft-setup-collab` · `/draft-load-team` |
+
+---
+
 ### Slash commands
 
-Draft ships two slash commands (skills). Both are auto-discovered by Claude Code, and manually installed by the Codex and Cursor setup scripts.
+Draft ships five slash commands (skills). All are auto-discovered by Claude Code, and manually installed by the Codex and Cursor setup scripts.
 
 #### `/draft:setup` (`$draft-setup` on Codex, `/draft-setup` on Cursor)
 
@@ -285,9 +344,29 @@ Best when: you know the type and want the fastest, most predictable path.
 | `[product]` | `context/product/index.md` | Yes |
 | `[company]` | `context/company/index.md` | Structural changes only |
 | `[team]` | `context/team/index.md` | Structural changes only |
-| `[memory]` / `[pref]` / `[vocab]` | `memory/memory.md` | No |
+| `[memory]` / `[pref]` / `[vocab]` | `personal/memory.md` | No |
 
 A single learning can map to multiple files. "We decided to cut the bridge daemon" writes a decision file, updates `context/product/index.md`, and updates `context/priorities/index.md` — because all three reflect the new reality.
+
+---
+
+#### `/draft:setup-collab` (`$draft-setup-collab` on Codex, `/draft-setup-collab` on Cursor)
+
+Configures team collaboration. Checks gh CLI auth, lets you choose or create a shared private GitHub repo, writes local config files, and seeds the shared repo with your current context (curator path) or connects you as a teammate (if the repo already has Draft content). See [Team collaboration](#team-collaboration).
+
+---
+
+#### `/publish-team` (`$draft-publish-team` on Codex, `/draft-publish-team` on Cursor)
+
+Publishes your local context to the shared team repo. Reads log entries since last publish, builds `CHANGES.jsonl`, and pushes via the separate-clone pattern. Requires `/draft:setup-collab` to be configured first.
+
+---
+
+#### `/load-team` (`$draft-load-team` on Codex, `/draft-load-team` on Cursor)
+
+Pulls the latest team context from the shared repo directly into your `context/` directory. Reads `CHANGES.jsonl`, filters to entries since your last load, writes updated context files. Your `personal/` layer is never touched.
+
+---
 
 #### Claude Code
 `settings.json` activates `draft:pm-agent` as the main Claude Code thread. Every session opens with the pm-agent system prompt rather than the default Claude Code prompt.
@@ -323,7 +402,8 @@ Injected on every session start via hook. Outputs a live snapshot of:
 | Workspace structure | Two-level directory listing of `context/` |
 | Context index | Frontmatter from each `context/*/index.md`: name, description, last_updated, source |
 | Current priorities | Full `context/priorities/index.md` |
-| Memory | Full `memory/memory.md` — vocabulary, preferences, patterns, goals |
+| Memory | Full `personal/memory.md` — vocabulary, preferences, patterns, goals |
+| Collaboration | Status block from `config/collaboration.md` + `config/local.md` (only if configured) |
 
 The pm-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
 
@@ -404,8 +484,11 @@ draft-cli-plugin/
 │   ├── draft-executor.md         Executor sub-agent
 │   └── draft-learner.md          Learner sub-agent
 ├── skills/
-│   ├── draft-setup/SKILL.md      Onboarding interview skill
-│   └── draft-learn/SKILL.md      Manual learning capture skill
+│   ├── draft-setup/SKILL.md           Onboarding interview skill
+│   ├── draft-learn/SKILL.md           Manual learning capture skill
+│   ├── draft-setup-collab/SKILL.md    Team collaboration configuration skill
+│   ├── draft-publish-team/SKILL.md    Publish context to shared repo
+│   └── draft-load-team/SKILL.md       Load team context from shared repo
 ├── hooks/
 │   └── hooks.json                Claude Code SessionStart hooks config
 ├── scripts/
@@ -419,16 +502,17 @@ draft-cli-plugin/
 ├── workspace-template/           Blank workspace, copied to ~/.draft/workspace on first run
 │   ├── CLAUDE.md
 │   ├── context/
-│   │   ├── company/index.md
-│   │   ├── product/index.md
-│   │   ├── priorities/index.md
-│   │   ├── team/index.md
-│   │   ├── user/index.md
+│   │   ├── company/index.md + log/
+│   │   ├── product/index.md + log/
+│   │   ├── priorities/index.md + log/
+│   │   ├── team/index.md + log/
 │   │   ├── decisions/            (empty — populated as decisions are made)
 │   │   └── tensions.md
-│   ├── docs/                     (empty — written artifacts live here)
-│   └── memory/
-│       └── memory.md
+│   ├── personal/
+│   │   ├── user/index.md         (your working style — never shared)
+│   │   ├── memory.md             (AI learnings — never shared)
+│   │   └── wip/
+│   └── docs/                     (empty — written artifacts live here)
 ├── README.md
 └── CHANGELOG.md
 ```
@@ -441,16 +525,20 @@ All editors share the same workspace at `~/.draft/workspace/`:
 
 ```
 ~/.draft/workspace/
-├── context/
+├── context/                       ← shared brain (curator publishes, teammates load)
 │   ├── company/index.md + log/
 │   ├── product/index.md + log/
-│   ├── user/index.md
 │   ├── team/index.md + log/
 │   ├── priorities/index.md + log/
 │   ├── decisions/                 ← all decisions, one file per decision
 │   └── tensions.md
-├── memory/
-│   └── memory.md
+├── personal/                      ← private layer (never shared with team)
+│   ├── user/index.md              ← your role and working style
+│   ├── memory.md                  ← vocabulary, preferences, patterns, goals
+│   └── wip/                       ← drafts not ready to share
+├── config/                        ← created by /draft:setup-collab
+│   ├── collaboration.md           ← shared config (pushed to team repo)
+│   └── local.md                   ← machine state (never pushed)
 └── docs/                          ← written artifacts: analyses, PRDs, strategies
     YYYYMMDDHHMMSS_slug.md         (flat — no subdirectories)
 ```

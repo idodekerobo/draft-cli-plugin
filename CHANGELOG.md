@@ -11,6 +11,66 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] — 2026-05-12
+
+### Added — Team context sharing
+
+**Three new skills:**
+
+- `skills/draft-setup-collab/SKILL.md` — `/draft:setup-collab` configures team collaboration: checks gh CLI auth, lets the curator choose or create a shared GitHub repo, writes `config/collaboration.md` + `config/local.md`, and auto-seeds the shared repo on first use. Can be run standalone or invoked inline from `/draft:setup` Q5.5.
+- `skills/draft-publish-team/SKILL.md` — `/publish-team` publishes the curator's local context to the shared repo. Reads log entries since last publish, builds `CHANGES.jsonl` (append-only, deterministic IDs via sha256), pushes via the separate-clone pattern. Supports `--no-confirm` flag for automation.
+- `skills/draft-load-team/SKILL.md` — `/load-team` pulls the latest team context from the shared repo directly into `context/`. Reads `CHANGES.jsonl`, filters to entries since `last_loaded`, deduplicates by ID, writes updated context files. Personal layer is never touched.
+
+**Workspace restructure — personal layer:**
+
+- `workspace-template/personal/user/index.md` — personal layer for working style and preferences (moved from `context/user/index.md`). Never shared with the team.
+- `workspace-template/personal/memory.md` — personal layer for dynamic AI learnings (moved from `memory/memory.md`). Never shared with the team.
+- `workspace-template/personal/wip/.gitkeep` — scaffolds `wip/` for drafts not ready to share.
+- `workspace-template/context/user/index.md` — DELETED. User context now lives in `personal/user/index.md`.
+- `workspace-template/memory/memory.md` — DELETED. Memory now lives in `personal/memory.md`.
+
+**Workspace restructure — log directories:**
+
+- `workspace-template/context/company/log/.gitkeep` — scaffolds append-only log for company dimension.
+- `workspace-template/context/product/log/.gitkeep` — scaffolds append-only log for product dimension.
+- `workspace-template/context/team/log/.gitkeep` — scaffolds append-only log for team dimension.
+- `workspace-template/context/priorities/log/.gitkeep` — scaffolds append-only log for priorities dimension.
+
+**Key data structures:**
+
+- `config/collaboration.md` — shared config (mode, team_repo_url, team_repo_subdir, repo_is_private, teammates). Written by `/draft:setup-collab`, pushed by `/publish-team`, merged by `/load-team`. Lives in the shared repo.
+- `config/local.md` — machine state (gh_cli_authenticated, last_published, last_loaded). Written by `/draft:setup-collab`. Never pushed to shared repo.
+- `CHANGES.jsonl` — append-only change record in the shared repo. IDs are deterministic sha256 hashes. Foundation for all future rendering surfaces (Slack, web, Drive).
+
+### Changed
+
+- `skills/draft-setup/SKILL.md` — added Q5.5 (collaboration question after Q5, before Q6). If yes → invokes `/draft:setup-collab` inline. Updated workspace layout in welcome orientation. Updated "After the interview" file paths: `context/user/index.md` → `personal/user/index.md`, `memory/memory.md` → `personal/memory.md`.
+- `agents/pm-agent.md` — updated session context description (user dimension moved to personal layer). Added personal/ layer and collaboration config awareness to workspace layout. Updated all memory path references from `memory/memory.md` → `personal/memory.md`.
+- `scripts/inject-context.sh` — updated memory block to read from `personal/memory.md`. Added collaboration status block (reads `config/collaboration.md` + `config/local.md`; only fires when collaboration is configured).
+- `workspace-template/CLAUDE.md` — updated memory path from `memory/memory.md` → `personal/memory.md` (Cursor session context injection).
+- `scripts/codex-setup.sh` — updated workspace bootstrap: `context/user` removed (user moves to `personal/user`), `memory/` removed (memory moves to `personal/`), `personal/user` and `personal/wip` created, `context/*/log/` directories scaffolded. Added install blocks for `draft-setup-collab`, `draft-publish-team`, `draft-load-team` skills.
+- `scripts/cursor-setup.sh` — added install blocks for `draft-setup-collab`, `draft-publish-team`, `draft-load-team` skills.
+- `.cursor-plugin/plugin.json` — registered `draft-setup-collab`, `draft-publish-team`, `draft-load-team`. Version bumped to 1.5.0.
+- `VERSION` — bumped to 1.5.0.
+- `skills/draft-update/SKILL.md` — `/draft:update` now uses the `AskUserQuestion` tool for confirmation before running the update and before workspace migration. Added Step 3.5: intelligent v1.5 workspace migration. When upgrading from a version below 1.5.0, the skill detects old workspace paths (`context/user/index.md`, `memory/memory.md`), explains the structural change to the user, confirms before acting, moves files to the new `personal/` layout, scans for any additional user-added files, and creates `config/` scaffolding if absent. Migration is skipped if already on the new layout.
+
+### Architecture notes
+
+- **Separate-clone pattern:** The Draft workspace (`~/.draft/workspace`) is never initialized as a git repo. All git operations for `/publish-team` and `/load-team` run in short-lived temp directories (`mktemp -d`), then clean up. This keeps workspace files safe from accidental commits and makes the sharing mechanism storage-agnostic.
+- **Single curator (Gate B):** `/publish-team` is the write path; `/load-team` is read-only for teammates. Multi-curator (write contention, merge resolution) is deferred to Gate C.
+- **Load-team writes to context/ directly:** After `/load-team`, the teammate's `context/` IS the shared brain. No separate team-snapshot/ directory. The `personal/` layer is structurally separated and untouched by any team operation.
+- **CHANGES.jsonl is the foundation:** All future rendering surfaces (web UI, Slack digest, Drive sync) must read from `CHANGES.jsonl`. Do not build parallel change records — they will diverge.
+
+### Known gaps (deferred TODOs)
+
+1. **Atomic write for /load-team** — `/load-team` now writes directly to the active `context/` layer. A partial file copy (process killed mid-copy) would leave the agent's live context in an inconsistent state. Mitigation: write to `context/.loading-tmp/` first, rename atomically on success. Prioritize before wider rollout.
+2. Shallow clone for publish + load (after 50+ commits)
+3. Auto-notification at session start ("team context updated X days ago — run /load-team?")
+4. CHANGES.md rendered file (needed for Drive persona)
+5. `/invite-teammate` skill — deferred; GitHub UI is sufficient for collaborator management in beta
+
+---
+
 ## [1.4.0] — 2026-05-08
 
 ### Changed — Simplified workspace structure
