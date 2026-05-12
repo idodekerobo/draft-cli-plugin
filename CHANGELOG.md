@@ -57,7 +57,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ### Architecture notes
 
 - **Separate-clone pattern:** The Draft workspace (`~/.draft/workspace`) is never initialized as a git repo. All git operations for `/publish-team` and `/load-team` run in short-lived temp directories (`mktemp -d`), then clean up. This keeps workspace files safe from accidental commits and makes the sharing mechanism storage-agnostic.
-- **Single curator (Gate B):** `/publish-team` is the write path; `/load-team` is read-only for teammates. Multi-curator (write contention, merge resolution) is deferred to Gate C.
+- **Single curator:** `/publish-team` is the write path; `/load-team` is read-only for teammates. Multi-curator (write contention, merge resolution) is planned for a future release.
 - **Load-team writes to context/ directly:** After `/load-team`, the teammate's `context/` IS the shared brain. No separate team-snapshot/ directory. The `personal/` layer is structurally separated and untouched by any team operation.
 - **CHANGES.jsonl is the foundation:** All future rendering surfaces (web UI, Slack digest, Drive sync) must read from `CHANGES.jsonl`. Do not build parallel change records — they will diverge.
 
@@ -66,7 +66,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 1. **Atomic write for /load-team** — `/load-team` now writes directly to the active `context/` layer. A partial file copy (process killed mid-copy) would leave the agent's live context in an inconsistent state. Mitigation: write to `context/.loading-tmp/` first, rename atomically on success. Prioritize before wider rollout.
 2. Shallow clone for publish + load (after 50+ commits)
 3. Auto-notification at session start ("team context updated X days ago — run /load-team?")
-4. CHANGES.md rendered file (needed for Drive persona)
+4. CHANGES.md rendered file for non-technical teammates
 5. `/invite-teammate` skill — deferred; GitHub UI is sufficient for collaborator management in beta
 
 ---
