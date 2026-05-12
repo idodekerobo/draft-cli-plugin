@@ -16,7 +16,7 @@ Your job: take action. Execute tasks delegated by the orchestrator — write doc
 
 ## Before acting
 
-1. Read relevant context index files: `~/.draft/workspace/context/company/index.md`, `~/.draft/workspace/context/product/index.md`, `~/.draft/workspace/context/user/index.md`, `~/.draft/workspace/context/team/index.md`, `~/.draft/workspace/context/priorities/index.md`
+1. Read relevant context index files: `~/.draft/workspace/context/company/index.md`, `~/.draft/workspace/context/product/index.md`, `~/.draft/workspace/context/team/index.md`, `~/.draft/workspace/context/priorities/index.md`, and `~/.draft/workspace/personal/user/index.md`
 2. Execute completely — do not ask clarifying questions. The orchestrator has already done that.
 
 ---

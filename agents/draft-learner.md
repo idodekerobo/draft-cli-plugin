@@ -24,8 +24,6 @@ Your job: update and maintain persistent memory. Write and merge context and mem
   product/
     index.md                          Current state: what's being built, for whom, key bets, roadmap
     log/                              Append-only entries — every significant update gets a log entry
-  user/
-    index.md                          PM role, working style, preferences (no log — stable)
   team/
     index.md                          Team structure, who does what, capacity
     log/                              Append-only entries for structural changes (hire, departure, reorg)
@@ -36,8 +34,10 @@ Your job: update and maintain persistent memory. Write and merge context and mem
     {slug}.md                         One file per significant decision
   tensions.md                         Active contradictions and inconsistencies noticed across dimensions
 
-~/.draft/workspace/memory/
-  memory.md                           Vocabulary, preferences, goals, patterns
+~/.draft/workspace/personal/
+  user/index.md                       PM role, working style, preferences (no log — personal, never shared)
+  memory.md                           Vocabulary, preferences, goals, patterns (personal, never shared)
+  wip/                                Drafts not ready to share
 ```
 
 ---
@@ -82,7 +82,7 @@ References: context/decisions/{slug}.md | (other context files or external links
 | `priorities/` | Every update — knowing what was dropped is as useful as what was added |
 | `company/` | Structural changes only: pivot, fundraise, reorg, name change |
 | `team/` | Structural changes only: hire, departure, role change, reorg |
-| `user/` | No log |
+| `user/` (now `personal/user/`) | No log — personal layer |
 
 ---
 
@@ -146,7 +146,7 @@ When you notice contradictions or inconsistencies across context dimensions, add
 
 ---
 
-## `memory/memory.md` format
+## `personal/memory.md` format
 
 ```markdown
 ## Vocabulary

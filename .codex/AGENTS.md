@@ -16,9 +16,10 @@ You are complete but concise. Ask clarifying questions when needed, but only wha
 
 At session start, a hook has injected your workspace context as developer context. It includes:
 
-- **Context dimension summaries** — for each dimension (`company`, `product`, `user`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description`, `last_updated`, and `source`.
+- **Context dimension summaries** — for each dimension (`company`, `product`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description`, `last_updated`, and `source`.
 - **Current priorities in full** — the complete body of `context/priorities/index.md`
-- **Memory in full** — the complete body of `memory/memory.md`
+- **Memory in full** — the complete body of `personal/memory.md`
+- **Collaboration status** (if configured) — mode, repo, teammates, last published/loaded
 - **Workspace directory tree** — a two-level view of `context/`
 
 Use this as your orientation layer for every session. If a task requires deeper detail, read the relevant file in full at `$DRAFT_WORKSPACE/context/<dimension>/index.md`. If the user asks something that isn't answered by the summary, read the full file before responding.
@@ -95,7 +96,7 @@ If yes to any: spawn draft-learner before responding.
 - Product scope / roadmap / strategy changes → `product/index.md` + `product/log/`
 - Team structure changes → `team/index.md` + `team/log/`
 - Company changes → `company/index.md` + `company/log/`
-- Vocabulary, preferences, patterns → `memory/memory.md`
+- Vocabulary, preferences, patterns → `personal/memory.md`
 
 **After draft-learner completes, confirm to the user in one line.** Keep it brief. Only surface it if something actually changed.
 
@@ -151,7 +152,6 @@ $DRAFT_WORKSPACE/context/
   company/log/              Structural changes only (pivot, fundraise, reorg)
   product/index.md          Product: what's built, for whom, key bets, roadmap
   product/log/              Every update logged
-  user/index.md             PM: role, working style, preferences (no log)
   team/index.md             Team: structure, who does what, capacity
   team/log/                 Structural changes only (hire, departure, reorg)
   priorities/index.md       Current: active sprint, top priorities, blockers
@@ -159,10 +159,16 @@ $DRAFT_WORKSPACE/context/
   decisions/{slug}.md       Key decisions with status (active/superseded/parked)
   tensions.md               Active contradictions noticed across dimensions
 
-$DRAFT_WORKSPACE/memory/memory.md     Vocabulary, preferences, patterns, goals
-$DRAFT_WORKSPACE/docs/prds/           Product requirements documents
-$DRAFT_WORKSPACE/docs/decisions/      Full decision documents
-$DRAFT_WORKSPACE/templates/           Document templates
+$DRAFT_WORKSPACE/personal/
+  user/index.md             PM: role, working style, preferences (personal — never shared)
+  memory.md                 Vocabulary, preferences, patterns, goals (personal — never shared)
+  wip/                      Drafts not ready to share
+
+$DRAFT_WORKSPACE/config/
+  collaboration.md          Team facts: mode, repo, teammates (shared to team repo when configured)
+  local.md                  Machine state: last_published, last_loaded (never pushed)
+
+$DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (flat — no subdirectories)
 ```
 
 `$DRAFT_WORKSPACE` defaults to `~/.draft/workspace`.

@@ -22,9 +22,10 @@ You are complete but concise. Ask clarifying questions when needed, but only wha
 
 At session start, your workspace `CLAUDE.md` is automatically loaded. It injects:
 
-- **Context dimension summaries** — for each dimension (`company`, `product`, `user`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description` (2–10 sentence summary of current state), `last_updated`, and `source`. This tells you what's known and how fresh it is, without loading full file bodies.
+- **Context dimension summaries** — for each dimension (`company`, `product`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description` (2–10 sentence summary of current state), `last_updated`, and `source`. This tells you what's known and how fresh it is, without loading full file bodies.
 - **Current priorities in full** — the complete body of `context/priorities/index.md`
-- **Memory in full** — the complete body of `memory/memory.md`
+- **Memory in full** — the complete body of `personal/memory.md`
+- **Collaboration status** (if configured) — `config/collaboration.md` fields: mode, repo, teammates, last published/loaded
 - **Workspace directory tree** — a two-level view of `context/`
 
 Use this as your orientation layer for every session. If a task requires deeper detail — the full product strategy, team structure, a specific decision — read the relevant file in full using `$DRAFT_WORKSPACE/context/<dimension>/index.md`. If the user asks something that isn't answered by the summary, read the full file before responding.
@@ -108,7 +109,7 @@ If yes to any: call draft-learner before responding.
 - Product scope / roadmap / strategy changes → `product/index.md` + `product/log/`
 - Team structure changes → `team/index.md` + `team/log/`
 - Company changes → `company/index.md` + `company/log/`
-- Vocabulary, preferences, patterns → `memory/memory.md`
+- Vocabulary, preferences, patterns → `personal/memory.md`
 
 **After draft-learner completes, confirm to the user in one line.** Example: `"Updated priorities — marked 'standalone GitHub repo' as complete."` Keep it brief. Only surface it if something actually changed.
 
@@ -166,7 +167,6 @@ $DRAFT_WORKSPACE/context/
   company/log/              Structural changes only (pivot, fundraise, reorg)
   product/index.md          Product: what's built, for whom, key bets, roadmap
   product/log/              Every update logged
-  user/index.md             PM: role, working style, preferences (no log)
   team/index.md             Team: structure, who does what, capacity
   team/log/                 Structural changes only (hire, departure, reorg)
   priorities/index.md       Current: active sprint, top priorities, blockers
@@ -174,9 +174,24 @@ $DRAFT_WORKSPACE/context/
   decisions/{slug}.md       Key decisions with status (active/superseded/parked)
   tensions.md               Active contradictions noticed across dimensions
 
-$DRAFT_WORKSPACE/memory/memory.md     Cross-cutting: vocabulary, preferences, patterns, goals
+$DRAFT_WORKSPACE/personal/
+  user/index.md             PM: role, working style, preferences (personal — never shared)
+  memory.md                 Cross-cutting: vocabulary, preferences, patterns, goals (personal)
+  wip/                      Drafts not ready to share
+
+$DRAFT_WORKSPACE/config/
+  collaboration.md          Team facts: mode, repo URL, subdir, teammates (shared to repo)
+  local.md                  Machine state: gh auth, last_published, last_loaded (never pushed)
+
 $DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (analyses, PRDs, strategies, specs, etc.)
 ```
+
+**Personal layer** (`personal/`) — `personal/user/index.md` contains this user's working style and preferences. `personal/memory.md` contains dynamic AI learnings accumulated across sessions. These are personal — never shared with the team. Never read or overwrite anything in `personal/` on behalf of a team operation.
+
+**Collaboration config** (`config/`) — `config/collaboration.md` contains team facts: `mode`, `team_repo_url`, `team_repo_subdir`, `teammates` list. `config/local.md` contains machine state: `gh_cli_authenticated`, `last_published`, `last_loaded`. Use this to:
+- Route `/publish-team` and `/load-team` calls correctly
+- Tell the user when team context was last synced and whether it may be stale
+- Surface who the teammates are when relevant
 
 Always use `$DRAFT_WORKSPACE` as the root for all file paths.
 

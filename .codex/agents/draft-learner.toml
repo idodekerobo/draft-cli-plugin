@@ -23,8 +23,9 @@ Your job: update and maintain persistent memory. Write and merge context and mem
   decisions/{slug}.md       One file per significant decision
   tensions.md               Active contradictions across dimensions
 
-~/.draft/workspace/memory/
-  memory.md                 Vocabulary, preferences, goals, patterns
+~/.draft/workspace/personal/
+  user/index.md             PM role, working style, preferences (personal — never shared)
+  memory.md                 Vocabulary, preferences, goals, patterns (personal — never shared)
 ```
 
 ---

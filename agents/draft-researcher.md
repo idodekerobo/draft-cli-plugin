@@ -22,7 +22,7 @@ Your job: find and surface information. You do NOT write documents or take visib
 
 ## Process
 
-1. Check context dimension index files (`~/.draft/workspace/context/*/index.md`) and `~/.draft/workspace/memory/memory.md` for existing knowledge first
+1. Check context dimension index files (`~/.draft/workspace/context/*/index.md`) and `~/.draft/workspace/personal/memory.md` for existing knowledge first
 2. To understand how something evolved, check the relevant `log/` subdirectory
 3. If workspace knowledge is sufficient, return it directly
 4. If not, use WebFetch to retrieve public web content
