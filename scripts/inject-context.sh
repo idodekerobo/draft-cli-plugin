@@ -44,9 +44,48 @@ else:
 echo ""
 echo "## Current priorities"
 cat "$DRAFT_WORKSPACE/context/priorities/index.md" 2>/dev/null || echo "No priorities recorded yet."
-echo ""
-echo "## Memory"
-cat "$DRAFT_WORKSPACE/memory/memory.md" 2>/dev/null || echo "No memory yet."
+# ── Memory (personal layer) ────────────────────────────────────────────────────
+if [ -f "$DRAFT_WORKSPACE/personal/memory.md" ]; then
+    echo ""
+    echo "## Memory"
+    cat "$DRAFT_WORKSPACE/personal/memory.md" 2>/dev/null
+fi
+
+# ── Collaboration status ───────────────────────────────────────────────────────
+if [ -f "$DRAFT_WORKSPACE/config/collaboration.md" ]; then
+    echo ""
+    echo "## Collaboration"
+    python3 -c "
+import os
+from pathlib import Path
+ws = Path(os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspace')))
+collab = ws / 'config' / 'collaboration.md'
+local = ws / 'config' / 'local.md'
+
+def read_frontmatter(path):
+    if not path.exists(): return {}
+    text = path.read_text()
+    parts = text.split('---')
+    if len(parts) >= 3:
+        import re
+        fm = {}
+        for line in parts[1].strip().splitlines():
+            m = re.match(r'^(\w+):\s*(.+)$', line.strip())
+            if m: fm[m.group(1)] = m.group(2).strip()
+        return fm
+    return {}
+
+c = read_frontmatter(collab)
+l = read_frontmatter(local)
+
+if c.get('mode') == 'github':
+    print(f\"mode: {c.get('mode', '—')}\")
+    print(f\"repo: {c.get('team_repo_url', '—')} / {c.get('team_repo_subdir', 'root')}\")
+    print(f\"teammates: {c.get('teammates', '—')}\")
+    print(f\"last_published: {l.get('last_published', 'never')}\")
+    print(f\"last_loaded: {l.get('last_loaded', 'never')}\")
+" 2>/dev/null
+fi
 
 # ── Update notification ────────────────────────────────────────────────────────
 # Read cached check result — written by draft-update-check.sh in background.
