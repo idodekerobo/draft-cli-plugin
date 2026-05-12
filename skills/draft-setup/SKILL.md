@@ -61,9 +61,12 @@ Before asking Q1, deliver this orientation. Keep it warm but brief — don't pad
 > │   ├── product/        ← product state, target user, key bets, roadmap
 > │   ├── priorities/     ← active sprint, top priorities, blockers
 > │   ├── team/           ← structure, who does what, capacity
-> │   ├── user/           ← your role and working style
 > │   └── decisions/      ← key decisions with status (active/superseded/parked)
-> ├── memory/             ← vocabulary, preferences, recurring patterns
+> ├── personal/           ← your layer (never shared with team)
+> │   ├── user/           ← your role and working style
+> │   ├── memory.md       ← vocabulary, preferences, recurring patterns
+> │   └── wip/            ← drafts not ready to share
+> ├── config/             ← collaboration config (created when you set up team sharing)
 > └── docs/               ← written artifacts (analyses, PRDs, strategies) — named YYYYMMDDHHMMSS_descriptive-slug.md
 > ```
 >
@@ -143,6 +146,18 @@ Listen for: project management (Linear, Jira, Notion), communication (Slack, ema
 
 ---
 
+### Q5.5 — Team collaboration
+
+Ask:
+> "Do you want to use Draft together with your team? This lets you share your
+> context layer and keep it fresh across multiple people."
+
+If **yes**: Say "Let's set that up." → invoke `/draft:setup-collab` inline (call it as a skill before proceeding to Q6).
+
+If **no**: Continue to Q6 normally. No config files created.
+
+---
+
 ### Q6 — Hardest problem
 
 Ask:
@@ -173,10 +188,10 @@ Pass the synthesized content as a single, structured message. Instruct @draft-le
 
 - `context/company/index.md`
 - `context/product/index.md`
-- `context/user/index.md`
 - `context/team/index.md`
 - `context/priorities/index.md`
-- `memory/memory.md`
+- `personal/user/index.md`
+- `personal/memory.md`
 
 Each index file must have complete frontmatter:
 - `name`: dimension name

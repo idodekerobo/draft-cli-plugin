@@ -61,7 +61,7 @@ Signal words: "hired", "quit", "left", "joined", "now owns", "taking over", "con
 
 **Preference / Vocabulary / Pattern** — working style, terminology, recurring habits
 Signal words: "I prefer", "from now on", "we call it", "our word for", "I always", "don't do X", "the term we use"
-→ Destination: `memory/memory.md` (no log)
+→ Destination: `personal/memory.md` (no log)
 
 ### Multiple destinations
 
@@ -84,7 +84,7 @@ If a structured tag was provided, skip classification and route directly:
 | `[product]` | `context/product/index.md` + log |
 | `[company]` | `context/company/index.md` + log |
 | `[team]` | `context/team/index.md` + log |
-| `[memory]` or `[pref]` or `[vocab]` | `memory/memory.md` |
+| `[memory]` or `[pref]` or `[vocab]` | `personal/memory.md` |
 
 ---
 
@@ -95,7 +95,7 @@ Pass a complete, self-contained brief. Do not pass raw user words — synthesize
 1. **What was learned** — the synthesized content (what happened, what changed, why if known)
 2. **Classification** — which type it is
 3. **Destination(s)** — exact file paths to update, with log entries noted where required
-4. **Log entry needed?** — yes for `product/`, `priorities/`, structural `company/` or `team/` changes; no for `memory/memory.md` or `user/`
+4. **Log entry needed?** — yes for `product/`, `priorities/`, structural `company/` or `team/` changes; no for `personal/memory.md` or `user/`
 5. **Source** — `user conversation | /learn`
 6. **Today's date** — for `last_updated` and log timestamps
 
@@ -120,7 +120,7 @@ Examples:
 
 > "Saved. Created `context/decisions/drop-bridge-daemon.md` and updated `context/product/index.md`. Log entry written."
 
-> "Saved. Added 'curator' to vocabulary in `memory/memory.md`."
+> "Saved. Added 'curator' to vocabulary in `personal/memory.md`."
 
 Keep it brief. Do not repeat the full content back to the user.
 
@@ -132,5 +132,5 @@ Keep it brief. Do not repeat the full content back to the user.
 - Prefer inference over asking — only ask if classification is genuinely ambiguous after reading carefully
 - Synthesize before writing — derive meaning from what the user said, don't transcribe it verbatim
 - Multiple destinations are fine and often correct
-- Never write to `context/user/index.md` from /learn — user context is set via /setup only
+- Never write to `personal/user/index.md` from /learn — user context is set via /setup only
 - The description field in each index.md is loaded every session — update it to reflect the new reality, not just append to it
