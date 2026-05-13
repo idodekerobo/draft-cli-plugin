@@ -47,6 +47,11 @@ Existing users are migrated automatically at the next session start via `inject-
 
 > **Note:** If your `~/.draft/workspace` is a symlink, automatic migration is skipped. You will see a warning; migrate manually.
 
+### Fixed
+
+- **`/draft:setup` migration** — first-run profile creation now correctly migrates all content from an existing `~/.draft/workspace/` (old format) instead of writing blank stubs. Migrates: context index files + all log entries, `decisions/`, `research/`, `docs/` (recursively — subdirectories like `docs/plans/` are no longer dropped), `config/` (preserves team sharing setup), `.claude/skills/`, `brainstorm-sessions/`. Personal layer migrated from `old_workspace/personal/` to `~/.draft/personal/` only when real content exists and the destination doesn't already have real content.
+- **`pm-agent.md` — `AskUserQuestion` platform-conditional** — the instruction to use `AskUserQuestion` now specifies Claude Code only. Codex and Cursor do not have this tool; the previous unconditional rule would have caused failures in those environments.
+
 ### Known limitation
 
 Per-profile vocabulary in `memory.md` is not supported in v2.0. Consultants who have client-specific vocabulary may see it appear across profiles. A per-profile vocabulary section is planned for a future release.
