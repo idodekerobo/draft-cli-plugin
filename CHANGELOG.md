@@ -11,6 +11,48 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.0.0] — 2026-05-13
+
+### Added — Multi-profile support
+
+**New workspace architecture:**
+- Named profiles at `~/.draft/workspaces/<name>/` — one independent context directory per project or client
+- `~/.draft/active-profile` — single source of truth for the currently active profile
+- `~/.draft/personal/` — global personal layer (memory, user preferences) shared across all profiles
+- Session banner: `[Draft] Active profile: <name>` on stderr at session start (Claude Code / Codex); profile name in `additional_context` JSON for Cursor
+
+**Two new skills:**
+- `/draft:switch <name>` — activates a named profile; takes effect on next session restart
+- `/draft:profiles` — full lifecycle management: list, create, rename, delete
+
+**Updated skills:**
+- `/draft:setup` — profile-aware: prompts for profile name on first run (defaults to CWD slug), writes to `~/.draft/workspaces/<name>/` instead of hardcoded path
+- All existing skills unchanged — team sharing (`/publish-team`, `/load-team`) already uses `$DRAFT_WORKSPACE` so works automatically with any active profile
+
+### Changed — Personal layer is now global
+
+- `personal/` is no longer inside `~/.draft/workspaces/<name>/`. It lives at `~/.draft/personal/` and is shared across all profiles.
+- `inject-context.sh` and `cursor-session-start.sh` load memory from `~/.draft/personal/memory.md` (not `$DRAFT_WORKSPACE/personal/memory.md`)
+- `workspace-template/personal/` removed from template — `/draft:profiles create` no longer scaffolds a local personal directory
+- `pm-agent.md` and `draft-setup/SKILL.md` updated with explicit two-path spec: context at `$DRAFT_WORKSPACE/context/`, personal at `~/.draft/personal/`
+- `workspace-template/CLAUDE.md` memory path updated to `~/.draft/personal/memory.md`
+
+### Migration (automatic — no action required)
+
+Existing users are migrated automatically at the next session start via `inject-context.sh`:
+- `~/.draft/workspace/` → `~/.draft/workspaces/default/`
+- `~/.draft/workspaces/default/personal/` → `~/.draft/personal/` (elevated to global)
+- `~/.draft/active-profile` created with value `default`
+- Migration notification emitted to stderr; fully idempotent
+
+> **Note:** If your `~/.draft/workspace` is a symlink, automatic migration is skipped. You will see a warning; migrate manually.
+
+### Known limitation
+
+Per-profile vocabulary in `memory.md` is not supported in v2.0. Consultants who have client-specific vocabulary may see it appear across profiles. A per-profile vocabulary section is planned for a future release.
+
+---
+
 ## [1.5.1] — 2026-05-12
 
 ---
