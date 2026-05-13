@@ -11,7 +11,11 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.5.0] — 2026-05-12
+## [1.5.1] — 2026-05-12
+
+### Fixed
+
+- `skills/draft-update/SKILL.md` — added missing frontmatter block (`name`, `description`). Without it, the skill was not registered correctly by the plugin system and appeared as `/draft:draft-update` instead of `/draft:update`.
 
 ---
 
