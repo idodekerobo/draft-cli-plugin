@@ -1,3 +1,11 @@
+---
+name: draft-update
+description: >
+  Check for and apply Draft plugin updates. Detects when a newer version is
+  available on GitHub and guides the user through reinstalling the plugin to
+  get the latest skills and fixes.
+---
+
 # /draft:update
 
 Check for and apply Draft plugin updates.
