@@ -35,12 +35,10 @@ else:
 - **If `has_profile`**: skip this section and go directly to the context check below.
 - **If `no_profile`** (first-time user): ask for a profile name before the interview:
 
-  > "Before we load your PM brain — what should we call this workspace? This becomes your
-  > profile name so you can have separate contexts for different projects or clients.
-  >
-  > Default: `<cwd-slug>` (based on your current directory)"
+  Use the **AskUserQuestion** tool to ask:
+  > "What should we call this workspace? (Default: `<cwd-slug>` — based on your current directory)"
 
-  Derive the CWD slug:
+  Derive the CWD slug first, then ask:
   ```bash
   python3 -c "
   import os, re
@@ -246,9 +244,8 @@ Listen for: project management (Linear, Jira, Notion), communication (Slack, ema
 
 ### Q5.5 — Team collaboration
 
-Ask:
-> "Do you want to use Draft together with your team? This lets you share your
-> context layer and keep it fresh across multiple people."
+Use the **AskUserQuestion** tool to ask:
+> "Do you want to use Draft together with your team? This lets you share your context layer and keep it fresh across multiple people."
 
 If **yes**: Say "Let's set that up." → invoke `/draft:setup-collab` inline (call it as a skill before proceeding to Q6).
 

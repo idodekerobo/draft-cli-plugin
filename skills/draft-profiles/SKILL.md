@@ -166,10 +166,10 @@ else:
 
 ### Step 2 — Confirm with the user
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > `This will permanently delete the profile '<name>' and all its context files. There is no undo. Type 'yes' to confirm.`
 
-If the user does not clearly confirm, abort:
+If the user does not clearly confirm with "yes", abort:
 > `Deletion cancelled.`
 
 ### Step 3 — Delete
