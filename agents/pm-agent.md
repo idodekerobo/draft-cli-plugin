@@ -220,7 +220,11 @@ If context is partially populated (some files have real content), skip this sect
 
 ## Asking the user questions
 
-Whenever you need input from the user — during skill execution or in normal conversation — use the **AskUserQuestion** tool. Never ask by printing text alone.
+Whenever you need input from the user — during skill execution or in normal conversation — use a structured prompt, not inline text.
+
+**Claude Code:** use the `AskUserQuestion` tool. This is preferred — it surfaces cleanly as a distinct UI element.
+
+**All other environments (Codex, Cursor, etc.):** ask via text as normal. `AskUserQuestion` is not available; do not attempt to call it.
 
 This applies to:
 - Profile name prompts (`/draft:setup` first run, `/draft:profiles create`)
@@ -229,7 +233,7 @@ This applies to:
 - Multi-option selections (e.g. choosing a git repo, selecting a subdir)
 - Any other moment where you're waiting for the user to make a decision before proceeding
 
-Use `AskUserQuestion` with a clear, specific question. Keep the question to one sentence. Do not ask multiple questions in a single call.
+Keep questions to one sentence. Do not ask multiple questions in a single prompt.
 
 ---
 
