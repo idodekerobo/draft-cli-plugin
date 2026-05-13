@@ -8,7 +8,7 @@
 #   bash ./scripts/cursor-setup.sh
 #
 # What this does:
-#   1. Creates ~/.draft/workspace/ with blank context/memory structure (idempotent)
+#   1. Creates ~/.draft/personal/ (global layer) and ~/.draft/workspaces/default/ (profile workspace)
 #   2. Installs cursor-session-start.sh to ~/.cursor/hooks/draft/
 #   3. Registers the sessionStart hook in ~/.cursor/hooks.json
 #   4. [If no Claude Code plugin] Installs draft-context.mdc to ~/.cursor/rules/
@@ -26,7 +26,8 @@ set -euo pipefail
 
 GITHUB_RAW="https://raw.githubusercontent.com/idodekerobo/draft-cli-plugin/main"
 CURSOR_HOME="${CURSOR_HOME:-$HOME/.cursor}"
-DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
+DRAFT_GLOBAL="$HOME/.draft"
+DRAFT_WORKSPACE="$DRAFT_GLOBAL/workspaces/default"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -101,9 +102,52 @@ fi
 echo ""
 
 # ── 1. Bootstrap workspace ─────────────────────────────────────────────────────
+# Two layers: global personal (~/.draft/personal/) and per-profile workspace.
+# Creating both separately so personal files are not inside any profile directory.
 
+# 1a. Global personal layer (~/.draft/personal/)
+if [ ! -d "$DRAFT_GLOBAL/personal" ]; then
+    log "Creating global personal layer at $DRAFT_GLOBAL/personal..."
+
+    mkdir -p \
+        "$DRAFT_GLOBAL/personal/user" \
+        "$DRAFT_GLOBAL/personal/wip"
+
+    cat > "$DRAFT_GLOBAL/personal/user/index.md" <<'EOF'
+---
+name: user
+description: >
+  No information recorded yet.
+last_updated: ""
+source: ""
+---
+EOF
+
+    cat > "$DRAFT_GLOBAL/personal/memory.md" <<'EOF'
+---
+name: memory
+description: Vocabulary, working preferences, and non-obvious patterns.
+last_updated: ""
+source: ""
+---
+
+## Vocabulary
+
+## Preferences
+
+## Goals
+
+## Patterns
+EOF
+
+    log "Global personal layer created at $DRAFT_GLOBAL/personal"
+else
+    warn "Global personal layer already exists at $DRAFT_GLOBAL/personal — skipping."
+fi
+
+# 1b. Default profile workspace (~/.draft/workspaces/default/)
 if [ ! -d "$DRAFT_WORKSPACE" ]; then
-    log "Creating workspace at $DRAFT_WORKSPACE..."
+    log "Creating default workspace at $DRAFT_WORKSPACE..."
 
     mkdir -p \
         "$DRAFT_WORKSPACE/context/company/log" \
@@ -111,9 +155,8 @@ if [ ! -d "$DRAFT_WORKSPACE" ]; then
         "$DRAFT_WORKSPACE/context/team/log" \
         "$DRAFT_WORKSPACE/context/priorities/log" \
         "$DRAFT_WORKSPACE/context/decisions" \
-        "$DRAFT_WORKSPACE/personal/user" \
-        "$DRAFT_WORKSPACE/personal/wip" \
-        "$DRAFT_WORKSPACE/docs"
+        "$DRAFT_WORKSPACE/docs" \
+        "$DRAFT_WORKSPACE/config"
 
     for dim in company product team priorities; do
         cat > "$DRAFT_WORKSPACE/context/$dim/index.md" <<EOF
@@ -133,36 +176,15 @@ EOF
 Active contradictions and inconsistencies noticed across context dimensions.
 EOF
 
-    cat > "$DRAFT_WORKSPACE/personal/user/index.md" <<'EOF'
----
-name: user
-description: >
-  No information recorded yet.
-last_updated: ""
-source: ""
----
-EOF
-
-    cat > "$DRAFT_WORKSPACE/personal/memory.md" <<'EOF'
----
-name: memory
-description: Vocabulary, working preferences, and non-obvious patterns.
-last_updated: ""
-source: ""
----
-
-## Vocabulary
-
-## Preferences
-
-## Goals
-
-## Patterns
-EOF
-
-    log "Workspace created at $DRAFT_WORKSPACE"
+    log "Default workspace created at $DRAFT_WORKSPACE"
 else
-    warn "Workspace already exists at $DRAFT_WORKSPACE — skipping creation."
+    warn "Default workspace already exists at $DRAFT_WORKSPACE — skipping creation."
+fi
+
+# 1c. Set active-profile to "default" if not already set
+if [ ! -f "$DRAFT_GLOBAL/active-profile" ]; then
+    echo "default" > "$DRAFT_GLOBAL/active-profile"
+    log "Active profile set to: default"
 fi
 
 # ── 2. Install cursor-session-start.sh ─────────────────────────────────────────
@@ -300,6 +322,26 @@ log "  Skill installed to $CURSOR_HOME/skills/draft-load-team/SKILL.md"
 mkdir -p "$USER_AGENTS_SKILLS/draft-load-team"
 install_file "skills/draft-load-team/SKILL.md" "$USER_AGENTS_SKILLS/draft-load-team/SKILL.md"
 log "  Skill installed to $USER_AGENTS_SKILLS/draft-load-team/SKILL.md"
+
+log "Installing draft-switch skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-switch"
+install_file "skills/draft-switch/SKILL.md" "$CURSOR_HOME/skills/draft-switch/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-switch/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-switch"
+install_file "skills/draft-switch/SKILL.md" "$USER_AGENTS_SKILLS/draft-switch/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-switch/SKILL.md"
+
+log "Installing draft-profiles skill..."
+
+mkdir -p "$CURSOR_HOME/skills/draft-profiles"
+install_file "skills/draft-profiles/SKILL.md" "$CURSOR_HOME/skills/draft-profiles/SKILL.md"
+log "  Skill installed to $CURSOR_HOME/skills/draft-profiles/SKILL.md"
+
+mkdir -p "$USER_AGENTS_SKILLS/draft-profiles"
+install_file "skills/draft-profiles/SKILL.md" "$USER_AGENTS_SKILLS/draft-profiles/SKILL.md"
+log "  Skill installed to $USER_AGENTS_SKILLS/draft-profiles/SKILL.md"
 
 # ── 7. Install shared update scripts ──────────────────────────────────────────
 # Installed to ~/.draft/scripts/ — accessible from all platforms.
