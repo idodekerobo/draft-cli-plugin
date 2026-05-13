@@ -29,4 +29,4 @@ else:
 !`cat $DRAFT_WORKSPACE/context/priorities/index.md 2>/dev/null || echo "No priorities recorded yet."`
 
 ## Memory
-!`cat $DRAFT_WORKSPACE/personal/memory.md 2>/dev/null || echo "No memory yet."`
+!`cat ~/.draft/personal/memory.md 2>/dev/null || echo "No memory yet."`
