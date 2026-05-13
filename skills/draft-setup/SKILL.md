@@ -17,13 +17,109 @@ The goal is **derived context, not transcribed answers** — synthesize what the
 
 ## Before starting
 
-Check whether context already exists:
+### Profile detection (first-time users only)
+
+Check whether a profile is already configured:
+
+```bash
+python3 -c "
+from pathlib import Path
+active_file = Path.home() / '.draft' / 'active-profile'
+if active_file.exists() and active_file.read_text().strip():
+    print('has_profile')
+else:
+    print('no_profile')
+"
+```
+
+- **If `has_profile`**: skip this section and go directly to the context check below.
+- **If `no_profile`** (first-time user): ask for a profile name before the interview:
+
+  > "Before we load your PM brain — what should we call this workspace? This becomes your
+  > profile name so you can have separate contexts for different projects or clients.
+  >
+  > Default: `<cwd-slug>` (based on your current directory)"
+
+  Derive the CWD slug:
+  ```bash
+  python3 -c "
+  import os, re
+  cwd = os.path.basename(os.getcwd())
+  slug = cwd.lower()
+  slug = re.sub(r'[\s_]+', '-', slug)
+  slug = re.sub(r'[^a-z0-9-]', '', slug)
+  slug = slug[:40].strip('-') or 'default'
+  print(slug)
+  "
+  ```
+
+  Wait for the user's response. If they accept the default, use the CWD slug. Otherwise use their typed name (apply the same slug transformation).
+
+  Then create the profile directory and set active-profile:
+  ```bash
+  python3 - <<'PYEOF'
+  import re
+  from pathlib import Path
+
+  name = "<chosen-slug>"
+  base = Path.home() / ".draft" / "workspaces" / name
+  personal = Path.home() / ".draft" / "personal"
+
+  # Create workspace directories (no personal/ — that's global)
+  for subdir in [
+      base / "context" / "company" / "log",
+      base / "context" / "product" / "log",
+      base / "context" / "team" / "log",
+      base / "context" / "priorities" / "log",
+      base / "context" / "decisions",
+      base / "docs",
+      base / "config",
+  ]:
+      subdir.mkdir(parents=True, exist_ok=True)
+
+  for dim in ["company", "product", "team", "priorities"]:
+      idx = base / "context" / dim / "index.md"
+      idx.write_text(f"---\nname: {dim}\ndescription: >\n  No information recorded yet.\nlast_updated: \"\"\nsource: \"\"\n---\n")
+
+  (base / "context" / "tensions.md").write_text(
+      "# Tensions\n\nActive contradictions and inconsistencies noticed across context dimensions.\n"
+  )
+  (base / "docs" / ".gitkeep").touch()
+
+  # Create global personal layer if it doesn't exist yet
+  if not personal.exists():
+      (personal / "user").mkdir(parents=True, exist_ok=True)
+      (personal / "wip").mkdir(parents=True, exist_ok=True)
+      (personal / "user" / "index.md").write_text(
+          "---\nname: user\ndescription: >\n  No information recorded yet.\nlast_updated: \"\"\nsource: \"\"\n---\n"
+      )
+      (personal / "memory.md").write_text(
+          "---\nname: memory\ndescription: Vocabulary, working preferences, and non-obvious patterns.\nlast_updated: \"\"\nsource: \"\"\n---\n\n## Vocabulary\n\n## Preferences\n\n## Goals\n\n## Patterns\n"
+      )
+
+  # Write active-profile
+  (Path.home() / ".draft" / "active-profile").write_text(name + "\n")
+
+  print(f"Profile '{name}' created.")
+  PYEOF
+  ```
+
+  Update `DRAFT_WORKSPACE` for this session:
+  ```bash
+  export DRAFT_WORKSPACE="$HOME/.draft/workspaces/<chosen-slug>"
+  ```
+
+---
+
+### Context check
+
+Check whether context already exists in the current workspace:
 
 ```bash
 python3 -c "
 import os
 from pathlib import Path
-ws = os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspace'))
+ws = os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspaces/default'))
 files = list(Path(ws, 'context').glob('*/index.md'))
 has_content = any(
     '---' in Path(f).read_text() and 'No information recorded yet' not in Path(f).read_text()
@@ -46,7 +142,7 @@ Before asking Q1, deliver this orientation. Keep it warm but brief — don't pad
 >
 > A few things to know before we start:
 >
-> **Your workspace** lives at `~/.draft/workspace`. Everything Draft learns about your product, team, and priorities is stored there as plain markdown files — you can read, edit, or version-control them like any other file.
+> **Your workspace** lives at `~/.draft/workspaces/<profile-name>/`. Everything Draft learns about your product, team, and priorities is stored there as plain markdown files — you can read, edit, or version-control them like any other file. You can have multiple named workspaces for different projects or clients — run `/draft:profiles` to manage them.
 >
 > **How updates happen:** Draft writes to your workspace after this setup interview, and keeps it fresh as you work. Whenever you share a decision, a shift in priorities, or a team change, Draft will update the relevant files automatically. You can also say `update [company / product / team / priorities]` at any point to trigger an explicit refresh.
 >
@@ -55,19 +151,21 @@ Before asking Q1, deliver this orientation. Keep it warm but brief — don't pad
 > Here's the layout:
 >
 > ```
-> ~/.draft/workspace/
-> ├── context/
-> │   ├── company/        ← what you're building, business model, stage
-> │   ├── product/        ← product state, target user, key bets, roadmap
-> │   ├── priorities/     ← active sprint, top priorities, blockers
-> │   ├── team/           ← structure, who does what, capacity
-> │   └── decisions/      ← key decisions with status (active/superseded/parked)
-> ├── personal/           ← your layer (never shared with team)
-> │   ├── user/           ← your role and working style
-> │   ├── memory.md       ← vocabulary, preferences, recurring patterns
-> │   └── wip/            ← drafts not ready to share
-> ├── config/             ← collaboration config (created when you set up team sharing)
-> └── docs/               ← written artifacts (analyses, PRDs, strategies) — named YYYYMMDDHHMMSS_descriptive-slug.md
+> ~/.draft/
+> ├── workspaces/
+> │   └── <profile-name>/       ← your active workspace
+> │       ├── context/
+> │       │   ├── company/      ← what you're building, business model, stage
+> │       │   ├── product/      ← product state, target user, key bets, roadmap
+> │       │   ├── priorities/   ← active sprint, top priorities, blockers
+> │       │   ├── team/         ← structure, who does what, capacity
+> │       │   └── decisions/    ← key decisions with status (active/superseded/parked)
+> │       ├── config/           ← collaboration config (created when you set up team sharing)
+> │       └── docs/             ← written artifacts (analyses, PRDs, strategies)
+> └── personal/                 ← your global layer (shared across all profiles, never shared with team)
+>     ├── user/                 ← your role and working style
+>     ├── memory.md             ← vocabulary, preferences, recurring patterns
+>     └── wip/                  ← drafts not ready to share
 > ```
 >
 > **How Draft works:** Draft uses three specialized agents:
@@ -186,12 +284,15 @@ Do not pass raw answers to @draft-learner. Before writing, derive:
 
 Pass the synthesized content as a single, structured message. Instruct @draft-learner to write:
 
-- `context/company/index.md`
-- `context/product/index.md`
-- `context/team/index.md`
-- `context/priorities/index.md`
-- `personal/user/index.md`
-- `personal/memory.md`
+**Context files** (under `$DRAFT_WORKSPACE/context/`):
+- `$DRAFT_WORKSPACE/context/company/index.md`
+- `$DRAFT_WORKSPACE/context/product/index.md`
+- `$DRAFT_WORKSPACE/context/team/index.md`
+- `$DRAFT_WORKSPACE/context/priorities/index.md`
+
+**Personal files** (under `~/.draft/personal/` — global layer, NOT inside `$DRAFT_WORKSPACE`):
+- `~/.draft/personal/user/index.md`
+- `~/.draft/personal/memory.md`
 
 Each index file must have complete frontmatter:
 - `name`: dimension name

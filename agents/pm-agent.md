@@ -24,7 +24,7 @@ At session start, your workspace `CLAUDE.md` is automatically loaded. It injects
 
 - **Context dimension summaries** — for each dimension (`company`, `product`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description` (2–10 sentence summary of current state), `last_updated`, and `source`. This tells you what's known and how fresh it is, without loading full file bodies.
 - **Current priorities in full** — the complete body of `context/priorities/index.md`
-- **Memory in full** — the complete body of `personal/memory.md`
+- **Memory in full** — the complete body of `~/.draft/personal/memory.md` (global personal layer)
 - **Collaboration status** (if configured) — `config/collaboration.md` fields: mode, repo, teammates, last published/loaded
 - **Workspace directory tree** — a two-level view of `context/`
 
@@ -105,11 +105,11 @@ Use when something new or durable was learned, OR when the state of the work cha
 If yes to any: call draft-learner before responding.
 
 **Where to write updates (tell draft-learner explicitly):**
-- Sprint / priority changes → `priorities/index.md` + `priorities/log/`
-- Product scope / roadmap / strategy changes → `product/index.md` + `product/log/`
-- Team structure changes → `team/index.md` + `team/log/`
-- Company changes → `company/index.md` + `company/log/`
-- Vocabulary, preferences, patterns → `personal/memory.md`
+- Sprint / priority changes → `$DRAFT_WORKSPACE/context/priorities/index.md` + `priorities/log/`
+- Product scope / roadmap / strategy changes → `$DRAFT_WORKSPACE/context/product/index.md` + `product/log/`
+- Team structure changes → `$DRAFT_WORKSPACE/context/team/index.md` + `team/log/`
+- Company changes → `$DRAFT_WORKSPACE/context/company/index.md` + `company/log/`
+- Vocabulary, preferences, patterns → `~/.draft/personal/memory.md` (**NOT** `$DRAFT_WORKSPACE/personal/memory.md`)
 
 **After draft-learner completes, confirm to the user in one line.** Example: `"Updated priorities — marked 'standalone GitHub repo' as complete."` Keep it brief. Only surface it if something actually changed.
 
@@ -162,7 +162,7 @@ Context files include a `last_updated` field. Before relying on a file for an im
 Each dimension (except `user/`) has a `log/` directory with append-only entries named `YYYYMMDDHHMMSS_descriptive-slug.md`. These record what changed and why. Read relevant log entries when the user asks about history or past decisions — or when you're about to make a recommendation that may conflict with past context.
 
 ```
-$DRAFT_WORKSPACE/context/
+$DRAFT_WORKSPACE/context/        <- per-profile project context
   company/index.md          Company: name, mission, business model, stage
   company/log/              Structural changes only (pivot, fundraise, reorg)
   product/index.md          Product: what's built, for whom, key bets, roadmap
@@ -174,19 +174,21 @@ $DRAFT_WORKSPACE/context/
   decisions/{slug}.md       Key decisions with status (active/superseded/parked)
   tensions.md               Active contradictions noticed across dimensions
 
-$DRAFT_WORKSPACE/personal/
+~/.draft/personal/               <- GLOBAL personal layer (shared across ALL profiles)
   user/index.md             PM: role, working style, preferences (personal — never shared)
   memory.md                 Cross-cutting: vocabulary, preferences, patterns, goals (personal)
   wip/                      Drafts not ready to share
 
-$DRAFT_WORKSPACE/config/
+$DRAFT_WORKSPACE/config/         <- per-profile collaboration config
   collaboration.md          Team facts: mode, repo URL, subdir, teammates (shared to repo)
   local.md                  Machine state: gh auth, last_published, last_loaded (never pushed)
 
 $DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (analyses, PRDs, strategies, specs, etc.)
 ```
 
-**Personal layer** (`personal/`) — `personal/user/index.md` contains this user's working style and preferences. `personal/memory.md` contains dynamic AI learnings accumulated across sessions. These are personal — never shared with the team. Never read or overwrite anything in `personal/` on behalf of a team operation.
+**CRITICAL — Two-path model:** Context files live at `$DRAFT_WORKSPACE/context/` (per-profile). Personal files live at `~/.draft/personal/` (global, shared across all profiles). These are TWO SEPARATE locations. Never write personal files to `$DRAFT_WORKSPACE/personal/` — that path no longer exists. Always use `~/.draft/personal/memory.md` for memory, `~/.draft/personal/user/index.md` for user preferences.
+
+**Personal layer** (`~/.draft/personal/`) — contains this user's working style and preferences. Personal files are global and load regardless of which profile is active. These are personal — never shared with the team. Never read or overwrite anything in `personal/` on behalf of a team operation.
 
 **Collaboration config** (`config/`) — `config/collaboration.md` contains team facts: `mode`, `team_repo_url`, `team_repo_subdir`, `teammates` list. `config/local.md` contains machine state: `gh_cli_authenticated`, `last_published`, `last_loaded`. Use this to:
 - Route `/publish-team` and `/load-team` calls correctly
