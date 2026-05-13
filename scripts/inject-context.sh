@@ -1,15 +1,106 @@
 #!/bin/bash
 # SessionStart hook — injects Draft workspace context into every session.
 #
-# Runs the same commands as ~/.draft/workspace/CLAUDE.md directly,
+# Runs the same commands as the workspace CLAUDE.md directly,
 # so ! bash commands are always executed (not just printed as raw text).
 #
 # stdout: formatted context injected into Claude's system prompt
-# stderr: silent
+# stderr: profile banner, migration notices
+#
+# Profile resolution order:
+#   0. If $DRAFT_WORKSPACE is set externally, use it (banner shows path, not name)
+#   1. Read ~/.draft/active-profile → get profile name
+#   2. Set DRAFT_WORKSPACE=~/.draft/workspaces/<profile-name>
+#
+# Personal layer: always at ~/.draft/personal/ (global — shared across all profiles)
 
-DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
+DRAFT_GLOBAL="$HOME/.draft"
 
-# Skip gracefully if workspace not yet initialized
+# ── Migration: workspace/ → workspaces/default/ ────────────────────────────────
+# Runs once for existing users upgrading to multi-profile support.
+# Idempotent — safe to re-run (checks for workspaces/ before acting).
+# Guard: if workspace/ is a symlink (power-user trick), skip migration entirely.
+if [ -z "${DRAFT_WORKSPACE:-}" ] && [ -d "$DRAFT_GLOBAL/workspace" ] && [ ! -d "$DRAFT_GLOBAL/workspaces" ]; then
+    if [ -L "$DRAFT_GLOBAL/workspace" ]; then
+        echo "[Draft] workspace is a symlink — manual migration may be needed. See docs." >&2
+    else
+        # Step 1: Move workspace → workspaces/default
+        mkdir -p "$DRAFT_GLOBAL/workspaces"
+        mv "$DRAFT_GLOBAL/workspace" "$DRAFT_GLOBAL/workspaces/default"
+        echo "default" > "$DRAFT_GLOBAL/active-profile"
+
+        # Step 2: Elevate personal/ to global layer (~/.draft/personal/)
+        _src="$DRAFT_GLOBAL/workspaces/default/personal"
+        _dst="$DRAFT_GLOBAL/personal"
+
+        if [ -d "$_src" ]; then
+            if [ ! -d "$_dst" ]; then
+                mv "$_src" "$_dst"
+            else
+                # Destination exists — merge: copy files that don't exist at destination
+                find "$_src" -type f | while IFS= read -r _f; do
+                    _rel="${_f#$_src/}"
+                    _dest_f="$_dst/$_rel"
+                    if [ ! -f "$_dest_f" ]; then
+                        mkdir -p "$(dirname "$_dest_f")"
+                        mv "$_f" "$_dest_f"
+                        echo "[Draft] Merged: personal/$_rel" >&2
+                    else
+                        echo "[Draft] Skipped (exists): personal/$_rel" >&2
+                    fi
+                done
+                rm -rf "$_src"
+            fi
+        fi
+
+        echo "[Draft] Migrated to multi-profile. Active profile: default. Run /draft:profiles to manage profiles." >&2
+    fi
+fi
+
+# ── Profile resolution ─────────────────────────────────────────────────────────
+if [ -n "${DRAFT_WORKSPACE:-}" ]; then
+    # Externally set — use it as-is; banner shows path (no profile name available)
+    # Platform: Claude Code / Codex — banner to stderr
+    echo "[Draft] Active workspace: $DRAFT_WORKSPACE" >&2
+else
+    _active_profile_file="$DRAFT_GLOBAL/active-profile"
+    _active_profile=""
+
+    if [ -f "$_active_profile_file" ]; then
+        _active_profile=$(tr -d '[:space:]' < "$_active_profile_file")
+    fi
+
+    if [ -z "$_active_profile" ]; then
+        # No active-profile set
+        if [ -d "$DRAFT_GLOBAL/workspaces" ]; then
+            if [ -d "$DRAFT_GLOBAL/workspaces/default" ]; then
+                # Fall back to default if it exists
+                _active_profile="default"
+            else
+                echo "[Draft] No active profile set. Run /draft:profiles to create one." >&2
+                exit 0
+            fi
+        else
+            # Net-new install — silent default (setup will create the directory)
+            _active_profile="default"
+        fi
+    fi
+
+    DRAFT_WORKSPACE="$DRAFT_GLOBAL/workspaces/$_active_profile"
+
+    if [ ! -d "$DRAFT_WORKSPACE" ] && [ -d "$DRAFT_GLOBAL/workspaces" ]; then
+        echo "[Draft] Profile '$_active_profile' not found. Run /draft:profiles to see available profiles." >&2
+        exit 0
+    fi
+
+    # Platform: Claude Code / Codex — banner to stderr
+    echo "[Draft] Active profile: $_active_profile" >&2
+fi
+
+export DRAFT_WORKSPACE
+DRAFT_PERSONAL="$DRAFT_GLOBAL/personal"
+
+# ── Skip gracefully if workspace not yet initialized ───────────────────────────
 if [ ! -d "$DRAFT_WORKSPACE/context" ]; then
     echo "(Draft workspace not initialized — run /draft:setup)"
     exit 0
@@ -24,7 +115,7 @@ echo "## Context index"
 python3 -c "
 import os
 from pathlib import Path
-ws = os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspace'))
+ws = os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspaces/default'))
 ctx = Path(ws) / 'context'
 files = sorted(ctx.glob('*/index.md'))
 if not files:
@@ -44,21 +135,22 @@ else:
 echo ""
 echo "## Current priorities"
 cat "$DRAFT_WORKSPACE/context/priorities/index.md" 2>/dev/null || echo "No priorities recorded yet."
-# ── Memory (personal layer) ────────────────────────────────────────────────────
-if [ -f "$DRAFT_WORKSPACE/personal/memory.md" ]; then
+
+# ── Memory (personal layer — global, shared across all profiles) ───────────────
+if [ -f "$DRAFT_PERSONAL/memory.md" ]; then
     echo ""
     echo "## Memory"
-    cat "$DRAFT_WORKSPACE/personal/memory.md" 2>/dev/null
+    cat "$DRAFT_PERSONAL/memory.md" 2>/dev/null
 fi
 
-# ── Collaboration status ───────────────────────────────────────────────────────
+# ── Collaboration status (per-profile — reads from active workspace config/) ───
 if [ -f "$DRAFT_WORKSPACE/config/collaboration.md" ]; then
     echo ""
     echo "## Collaboration"
     python3 -c "
 import os
 from pathlib import Path
-ws = Path(os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspace')))
+ws = Path(os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspaces/default')))
 collab = ws / 'config' / 'collaboration.md'
 local = ws / 'config' / 'local.md'
 

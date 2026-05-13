@@ -9,17 +9,81 @@
 #   stderr: silent (Cursor does not surface hook stderr to the user)
 #   exit 0: always (sessionStart is fire-and-forget)
 #
+# Banner channel: Cursor stderr is silent. The profile banner goes into the
+#   additional_context JSON payload as a prefix line — NOT to stderr.
+#
+# Profile resolution:
+#   0. If $DRAFT_WORKSPACE is set externally, use it (banner shows path, not name)
+#   1. Read ~/.draft/active-profile → get profile name
+#   2. Set DRAFT_WORKSPACE=~/.draft/workspaces/<profile-name>
+#
+# Personal layer: always at ~/.draft/personal/ (global — shared across all profiles)
+#
 # Installed by cursor-setup.sh to ~/.cursor/hooks/draft/cursor-session-start.sh
 
-DRAFT_WORKSPACE="${DRAFT_WORKSPACE:-$HOME/.draft/workspace}"
+DRAFT_GLOBAL="$HOME/.draft"
+
+# ── Migration: workspace/ → workspaces/default/ ────────────────────────────────
+# Same logic as inject-context.sh. Runs silently — Cursor stderr is not visible.
+if [ -z "${DRAFT_WORKSPACE:-}" ] && [ -d "$DRAFT_GLOBAL/workspace" ] && [ ! -d "$DRAFT_GLOBAL/workspaces" ]; then
+    if [ ! -L "$DRAFT_GLOBAL/workspace" ]; then
+        mkdir -p "$DRAFT_GLOBAL/workspaces"
+        mv "$DRAFT_GLOBAL/workspace" "$DRAFT_GLOBAL/workspaces/default"
+        echo "default" > "$DRAFT_GLOBAL/active-profile"
+
+        _src="$DRAFT_GLOBAL/workspaces/default/personal"
+        _dst="$DRAFT_GLOBAL/personal"
+
+        if [ -d "$_src" ]; then
+            if [ ! -d "$_dst" ]; then
+                mv "$_src" "$_dst"
+            else
+                find "$_src" -type f | while IFS= read -r _f; do
+                    _rel="${_f#$_src/}"
+                    _dest_f="$_dst/$_rel"
+                    if [ ! -f "$_dest_f" ]; then
+                        mkdir -p "$(dirname "$_dest_f")"
+                        mv "$_f" "$_dest_f"
+                    fi
+                done
+                rm -rf "$_src"
+            fi
+        fi
+    fi
+fi
+
+# ── Profile resolution ─────────────────────────────────────────────────────────
+_draft_profile_name=""
+
+if [ -n "${DRAFT_WORKSPACE:-}" ]; then
+    # Externally set — use it as-is; banner will show path
+    _draft_profile_name=""
+else
+    _active_profile_file="$DRAFT_GLOBAL/active-profile"
+    _active_profile=""
+
+    if [ -f "$_active_profile_file" ]; then
+        _active_profile=$(tr -d '[:space:]' < "$_active_profile_file")
+    fi
+
+    if [ -z "$_active_profile" ]; then
+        _active_profile="default"
+    fi
+
+    DRAFT_WORKSPACE="$DRAFT_GLOBAL/workspaces/$_active_profile"
+    _draft_profile_name="$_active_profile"
+fi
+
 export DRAFT_WORKSPACE
+export DRAFT_GLOBAL
+export DRAFT_PROFILE_NAME="$_draft_profile_name"
 
 # ── Guard: workspace not initialized ──────────────────────────────────────────
 if [ ! -d "$DRAFT_WORKSPACE/context" ]; then
     python3 -c "
 import json
 print(json.dumps({
-    'additional_context': 'Draft workspace not initialized. Run /draft-setup to load your PM brain.'
+    'additional_context': 'Draft workspace not initialized. Run /draft:setup to load your PM brain.'
 }))
 "
     exit 0
@@ -29,16 +93,31 @@ fi
 #
 # Python handles JSON encoding to avoid shell quoting hazards.
 # Context files contain arbitrary markdown (quotes, newlines, special chars).
+# Banner goes into additional_context as a prefix line (stderr is silent in Cursor).
 
 python3 - <<'PYEOF'
 import os, json, subprocess
 from pathlib import Path
 
-ws = os.environ.get("DRAFT_WORKSPACE", os.path.expanduser("~/.draft/workspace"))
-ctx_dir = Path(ws) / "context"
-mem_file = Path(ws) / "personal" / "memory.md"
+ws = os.environ.get("DRAFT_WORKSPACE", os.path.expanduser("~/.draft/workspaces/default"))
+draft_global = os.environ.get("DRAFT_GLOBAL", os.path.expanduser("~/.draft"))
+profile_name = os.environ.get("DRAFT_PROFILE_NAME", "")
 
-parts = ["# Draft — Workspace Context", ""]
+ctx_dir = Path(ws) / "context"
+# Personal layer is global — shared across all profiles
+mem_file = Path(draft_global) / "personal" / "memory.md"
+
+parts = []
+
+# ── Profile banner (Cursor: banner in additional_context, not stderr) ──────────
+# Cursor's stderr is silent — the user must see which profile is active here.
+if profile_name:
+    parts.append(f"Draft workspace: {profile_name}\n")
+else:
+    # DRAFT_WORKSPACE was set externally — show the resolved path
+    parts.append(f"Draft workspace: {ws}\n")
+
+parts += ["# Draft — Workspace Context", ""]
 
 # ── Workspace directory tree (2 levels) ───────────────────────────────────────
 parts.append("## Workspace structure")
@@ -56,7 +135,7 @@ except Exception:
         for d in dirs:
             parts.append(f"  {d}/")
     except Exception:
-        parts.append("(context/ not found — run /draft-setup)")
+        parts.append("(context/ not found — run /draft:setup)")
 parts.append("")
 
 # ── Context index: frontmatter description from each dimension ─────────────────
@@ -75,7 +154,7 @@ if index_files:
         except Exception:
             pass
 else:
-    parts.append("No context loaded yet — run /draft-setup to initialize your PM brain.")
+    parts.append("No context loaded yet — run /draft:setup to initialize your PM brain.")
     parts.append("")
 
 # ── Current priorities (full content) ─────────────────────────────────────────
@@ -87,7 +166,7 @@ else:
     parts.append("No priorities recorded yet.")
 parts.append("")
 
-# ── Memory (full content) ──────────────────────────────────────────────────────
+# ── Memory (global personal layer — shared across all profiles) ────────────────
 parts.append("## Memory")
 if mem_file.exists():
     parts.append(mem_file.read_text().strip())
@@ -104,7 +183,7 @@ if _last_check.exists():
             _old_ver, _new_ver = _check[1], _check[2]
             parts.append("")
             parts.append("## Draft Update Available")
-            parts.append(f"v{_new_ver} is available (currently on v{_old_ver}). Mention this to the user and offer to run `/draft-update` to upgrade.")
+            parts.append(f"v{_new_ver} is available (currently on v{_old_ver}). Mention this to the user and offer to run `/draft:update` to upgrade.")
     except Exception:
         pass
 
