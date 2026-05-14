@@ -11,6 +11,22 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.2.1] — 2026-05-14
+
+### Changed — Rebrand: pm-agent → draft-agent, "PM brain" → "shared team context layer"
+
+- **`agents/pm-agent.md`** — renamed to `agents/draft-agent.md`. Frontmatter `name` updated to `draft-agent`. Description updated to reflect shared context layer framing.
+- **`settings.json`** — agent identifier updated from `draft:pm-agent` to `draft:draft-agent`.
+- **`.claude-plugin/plugin.json`**, **`.claude-plugin/marketplace.json`**, **`.cursor-plugin/plugin.json`** — descriptions and keywords updated. "PM brain" and "pm-brain" replaced with "shared team context layer" framing. Keyword `pm-brain` replaced with `context-layer`.
+- **`.cursor-plugin/plugin.json`** — `displayName` updated from "Draft — PM Brain for Cursor" to "Draft — Shared Team Context Layer for Cursor".
+- **`.codex/AGENTS.md`**, **`.cursor/rules/draft-context.mdc`** — headers and user-facing copy updated to "Shared Team Context Layer".
+- **`skills/draft-setup/SKILL.md`** — frontmatter description and all user-facing dialogue updated. "PM brain initialization" → "context initialization". "Load your PM brain" → "load your shared context workspace".
+- **`skills/draft-profiles/SKILL.md`** — post-create confirmation message updated.
+- **`workspace-template/CLAUDE.md`** — error messages updated from "initialize your PM brain" to "initialize your shared context workspace".
+- **`agents/draft-learner.md`**, **`README.md`** — all remaining "PM brain" and `pm-agent` references updated throughout.
+
+---
+
 ## [2.2.0] — 2026-05-14
 
 ---

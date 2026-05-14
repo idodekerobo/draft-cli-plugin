@@ -1,6 +1,6 @@
 # Draft — Claude Code + Codex CLI + Cursor
 
-**Draft is a PM brain for Claude Code, Codex CLI, and Cursor.** Install it once, run `/setup`, and every session starts with full product context — no re-explaining required.
+**Persistent shared context for Claude Code, Codex CLI, and Cursor.** Install once, run `/setup`, and every session starts with full shared context — no re-explaining required.
 
 > **Platform support: macOS and Linux only.** The plugin's session hook is a bash script and requires a POSIX shell environment. Windows (including WSL) is untested and not currently supported.
 
@@ -106,7 +106,7 @@ The script installs seven things:
 3. Registers the `SessionStart` hook in `~/.codex/hooks.json`
 4. Enables the `codex_hooks` feature flag in `~/.codex/config.toml`
 5. Installs sub-agent TOML files to `~/.codex/agents/`
-6. Writes pm-agent instructions to `~/.codex/AGENTS.md`
+6. Writes draft-agent instructions to `~/.codex/AGENTS.md`
 7. Installs the `$draft-setup` skill to `~/.agents/skills/draft-setup/SKILL.md`
 
 After the script completes, restart Codex, then run:
@@ -127,7 +127,7 @@ bash ./scripts/codex-uninstall.sh
 
 ### Cursor
 
-This is a **direct install** into `~/.cursor/`. The setup script is smart about what it installs — if the Claude Code or Codex plugin is already installed, it skips anything that would create a duplicate PM brain in Cursor's context (see [Multi-editor setup](#multi-editor-setup) below).
+This is a **direct install** into `~/.cursor/`. The setup script is smart about what it installs — if the Claude Code or Codex plugin is already installed, it skips anything that would create duplicate context in Cursor (see [Multi-editor setup](#multi-editor-setup) below).
 
 **Option 1 — curl (no clone needed):**
 
@@ -167,7 +167,7 @@ bash ./scripts/cursor-uninstall.sh
 
 ## Keeping Draft up to date
 
-Draft checks for updates automatically in the background on every session start. When a new version is available, your pm-agent will mention it at the start of your next session and offer to apply the update.
+Draft checks for updates automatically in the background on every session start. When a new version is available, Draft will mention it at the start of your next session and offer to apply the update.
 
 ### Check and apply an update
 
@@ -188,7 +188,7 @@ $draft-update
 
 The update command shows what version you're on, what's available, and asks for confirmation before doing anything. It downloads the new files, updates your install, and tells you what changed. You'll need to restart your session for changes to take effect.
 
-The update never touches your PM brain data at `~/.draft/workspace/` — only the plugin files themselves are updated.
+The update never touches your context data at `~/.draft/workspace/` — only the plugin files themselves are updated.
 
 ### How version tracking works
 
@@ -210,11 +210,11 @@ gh release create v1.x.x --title "v1.x.x" --notes "..."
 
 ### Agent architecture
 
-Draft uses an orchestrator + three sub-agents pattern. The pm-agent is the main thread — it handles all PM work and delegates to specialists.
+Draft uses an orchestrator + three sub-agents pattern. The draft-agent is the main thread — it manages shared context and delegates to specialists.
 
 | Agent | Role |
 |---|---|
-| `pm-agent` | **Orchestrator.** Owns all PM behavior. Delegates to the three agents below. |
+| `draft-agent` | **Orchestrator.** Manages shared team context. Delegates to the three agents below. |
 | `draft-researcher` | Need to KNOW something — reads workspace files, fetches web content |
 | `draft-executor` | Need to DO something — writes PRDs, decision docs, updates files |
 | `draft-learner` | Need to REMEMBER something — updates context files, logs decisions |
@@ -288,7 +288,7 @@ Draft ships five slash commands (skills). All are auto-discovered by Claude Code
 
 #### `/draft:setup` (`$draft-setup` on Codex, `/draft-setup` on Cursor)
 
-Runs the PM brain initialization interview. Ask it once at install, or again after a significant product shift. See [Quick start](#quick-start).
+Runs the context initialization interview. Run once at install, or again after a significant product or team shift. See [Quick start](#quick-start).
 
 ---
 
@@ -369,13 +369,13 @@ Pulls the latest team context from the shared repo directly into your `context/`
 ---
 
 #### Claude Code
-`settings.json` activates `draft:pm-agent` as the main Claude Code thread. Every session opens with the pm-agent system prompt rather than the default Claude Code prompt.
+`settings.json` activates `draft:draft-agent` as the main Claude Code thread. Every session opens with the draft-agent system prompt rather than the default Claude Code prompt.
 
 #### Codex
-`~/.codex/AGENTS.md` contains the pm-agent instructions and loads as persistent context for every Codex session. Sub-agents are installed as custom agent `.toml` files in `~/.codex/agents/`.
+`~/.codex/AGENTS.md` contains the draft-agent instructions and loads as persistent context for every Codex session. Sub-agents are installed as custom agent `.toml` files in `~/.codex/agents/`.
 
 #### Cursor
-`~/.cursor/rules/draft-context.mdc` (installed with `alwaysApply: true`) contains the pm-agent instructions and is injected into every Agent tab session. Sub-agents are available in `~/.cursor/agents/` and invocable by name in the Agent tab. When Claude Code is also installed, Cursor reads `~/.claude/agents/` directly and `draft-context.mdc` is skipped to avoid duplication.
+`~/.cursor/rules/draft-context.mdc` (installed with `alwaysApply: true`) contains the draft-agent instructions and is injected into every Agent tab session. Sub-agents are available in `~/.cursor/agents/` and invocable by name in the Agent tab. When Claude Code is also installed, Cursor reads `~/.claude/agents/` directly and `draft-context.mdc` is skipped to avoid duplication.
 
 ---
 
@@ -385,7 +385,7 @@ There are two layers of context loaded at session start:
 
 **1. Agent system prompt — static**
 
-The pm-agent's instructions define:
+The draft-agent's instructions define:
 - PM role and orchestration behavior
 - Delegation rules and when to use each sub-agent
 - Document writing flow and template selection
@@ -405,7 +405,7 @@ Injected on every session start via hook. Outputs a live snapshot of:
 | Memory | Full `personal/memory.md` — vocabulary, preferences, patterns, goals |
 | Collaboration | Status block from `config/collaboration.json` + `config/local.json` (only if configured) |
 
-The pm-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
+The draft-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
 
 | Editor | Hook mechanism | Output format |
 |---|---|---|
@@ -428,14 +428,14 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 
 1. `session-init.sh` guards pass, exits in <10ms
 2. `inject-context.sh` runs — outputs live workspace snapshot into session context
-3. `draft:pm-agent` activates as main thread
-4. pm-agent is oriented: context dimensions, freshness, priorities, memory
+3. `draft:draft-agent` activates as main thread
+4. draft-agent is oriented: context dimensions, freshness, priorities, memory
 
 #### Codex — after running `codex-setup.sh`
 
 1. `SessionStart` hook fires → `inject-context.sh` runs, outputs workspace snapshot as developer context
-2. `~/.codex/AGENTS.md` (pm-agent instructions) loads as persistent context
-3. pm-agent is oriented and ready
+2. `~/.codex/AGENTS.md` (draft-agent instructions) loads as persistent context
+3. draft-agent is oriented and ready
 
 #### Cursor — after running `cursor-setup.sh`
 
@@ -443,13 +443,13 @@ The pm-agent uses this as its orientation layer. When a task needs more detail t
 2. `sessionStart` hook fires → `cursor-session-start.sh` runs silently in the background
 3. Workspace snapshot injected as initial system context via `additional_context`
 4. `draft-context.mdc` rule loaded (if Claude Code plugin is not also installed)
-5. pm-agent is oriented and ready — context loads before you type your first message
+5. draft-agent is oriented and ready — context loads before you type your first message
 
 ---
 
 ### Multi-editor setup
 
-Draft's workspace at `~/.draft/workspace/` is shared across all editors. Running setup for multiple editors does not create multiple workspaces — it just connects each editor to the same PM brain.
+Draft's workspace at `~/.draft/workspace/` is shared across all editors. Running setup for multiple editors does not create multiple workspaces — it just connects each editor to the same shared context workspace.
 
 **If you use Claude Code + Cursor:** Run `claude plugin install` first, then `cursor-setup.sh`. The Cursor setup script detects the Claude Code plugin and skips installing duplicate rules and sub-agents. Cursor reads `~/.claude/agents/` natively.
 
@@ -467,7 +467,7 @@ draft-cli-plugin/
 │   ├── plugin.json               Claude Code plugin manifest
 │   └── marketplace.json          Plugin marketplace catalog
 ├── .codex/
-│   ├── AGENTS.md                 pm-agent instructions for Codex (→ ~/.codex/AGENTS.md)
+│   ├── AGENTS.md                 draft-agent instructions for Codex (→ ~/.codex/AGENTS.md)
 │   └── agents/
 │       ├── draft-researcher.toml Codex sub-agent definition
 │       ├── draft-executor.toml   Codex sub-agent definition
@@ -475,11 +475,11 @@ draft-cli-plugin/
 ├── .cursor/
 │   ├── hooks.json                In-repo Cursor hooks config (dev use)
 │   └── rules/
-│       └── draft-context.mdc     pm-agent instructions for Cursor (→ ~/.cursor/rules/)
+│       └── draft-context.mdc     draft-agent instructions for Cursor (→ ~/.cursor/rules/)
 ├── .cursor-plugin/
 │   └── plugin.json               Cursor marketplace manifest (pending submission)
 ├── agents/
-│   ├── pm-agent.md               Orchestrator agent (Claude Code + Cursor)
+│   ├── draft-agent.md            Orchestrator agent (Claude Code + Cursor)
 │   ├── draft-researcher.md       Researcher sub-agent
 │   ├── draft-executor.md         Executor sub-agent
 │   └── draft-learner.md          Learner sub-agent
