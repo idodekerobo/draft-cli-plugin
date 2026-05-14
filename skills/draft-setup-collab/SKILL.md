@@ -13,6 +13,25 @@ Can be run standalone (`/draft:setup-collab`) or invoked inline from `/draft:set
 
 ---
 
+## Step 0: Resolve workspace path
+
+Before writing any files, resolve the active workspace path at runtime — do not
+rely on the `$DRAFT_WORKSPACE` env var, which may not reflect the current profile yet.
+
+```bash
+python3 -c "
+from pathlib import Path
+profile_file = Path.home() / '.draft' / 'active-profile'
+profile = profile_file.read_text().strip() if profile_file.exists() else 'default'
+ws = Path.home() / '.draft' / 'workspaces' / profile
+print(str(ws))
+"
+```
+
+Store the result as `ACTIVE_WORKSPACE`. Use it everywhere a workspace path is needed in this skill.
+
+---
+
 ## Step 1: Check gh CLI
 
 Run:
