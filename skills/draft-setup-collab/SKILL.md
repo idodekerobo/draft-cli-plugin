@@ -218,7 +218,11 @@ Interpret the result:
   # root → DRAFT_TMP/config/collaboration.md
   # .draft → DRAFT_TMP/.draft/config/collaboration.md
   # custom → DRAFT_TMP/[subdir]/config/collaboration.md
-  ls "[DRAFT_TMP]/[subdir_path]/config/collaboration.md" 2>/dev/null && echo "SEEDED" || echo "NOT_SEEDED"
+  if ls "[DRAFT_TMP]/[subdir_path]/config/collaboration.md" 2>/dev/null; then
+    echo "SEEDED"
+  else
+    echo "NOT_SEEDED"
+  fi
   ```
   Then: `rm -rf "$DRAFT_TMP"`
 
