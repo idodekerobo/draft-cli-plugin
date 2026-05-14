@@ -136,7 +136,7 @@ PYEOF
 ### Step 4 — Confirm
 
 Respond:
-> `Profile '<name>' created. Run /draft:switch <name> to activate it, then /draft:setup to load your PM brain.`
+> `Profile '<name>' created. Run /draft:switch <name> to activate it, then /draft:setup to initialize shared context.`
 
 ---
 

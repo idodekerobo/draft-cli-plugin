@@ -1,15 +1,15 @@
 ---
 name: draft-setup
 description: >
-  PM brain initialization. Runs a short conversational interview to derive
-  product context, then writes structured files to the workspace so every
+  Context initialization. Runs a short conversational interview to derive
+  product and team context, then writes structured files to the workspace so every
   future session starts grounded. Run once at onboarding, or anytime to
   refresh context after a significant shift.
 ---
 
-# /draft:setup — PM Brain Initialization
+# /draft:setup — Context Initialization
 
-You are loading the PM brain with context about what the user is building, who they're building it for, and how they work. This interview takes about 3–5 minutes.
+You are loading the shared context workspace with information about what the user is building, who they're building it for, and how they work. This interview takes about 3–5 minutes.
 
 The goal is **derived context, not transcribed answers** — synthesize what the user says into structured knowledge, don't just copy their words.
 
@@ -294,7 +294,7 @@ Before asking Q1, deliver this orientation. Keep it warm but brief — don't pad
 >
 > Most requests follow the same pattern: researcher gathers context → executor acts → learner saves what changed.
 >
-> Let's load your PM brain. This takes about 3–5 minutes."
+> Let's load your shared context workspace. This takes about 3–5 minutes."
 
 Then proceed directly to Q1 — no gap, no extra preamble.
 
@@ -304,7 +304,7 @@ Then proceed directly to Q1 — no gap, no extra preamble.
 
 Ask questions **one at a time**. Wait for the full answer before asking the next. Adapt each question to what you've already heard — skip or merge questions if the user already answered them.
 
-If the user says **"skip"** at any point, stop the interview immediately and say: "No problem — run `/draft:setup` anytime you're ready to load your PM brain."
+If the user says **"skip"** at any point, stop the interview immediately and say: "No problem — run `/draft:setup` anytime you're ready to load your shared context workspace."
 
 ---
 
@@ -438,7 +438,7 @@ End with one sharp, specific question grounded in what you just learned. Base it
 ## Re-run flow
 
 If context files already have content, show a one-line description per dimension (read from frontmatter), then use the **AskUserQuestion** tool to ask:
-> "Your PM brain already has context. Want to do a full refresh, or just tell me what's changed?"
+> "Your shared context workspace already has context. Want to do a full refresh, or just tell me what's changed?"
 
 - **Full refresh**: run the interview from Q1, overwrite all context files
 - **What's changed**: use the **AskUserQuestion** tool to ask "Walk me through what's different since we last synced." Then call @draft-learner to update only the relevant dimensions and write log entries for any changes to `product/` or `priorities/`.

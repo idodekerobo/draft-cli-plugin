@@ -57,7 +57,7 @@ Your job: update and maintain persistent memory. Write and merge context and mem
 
 Every dimension except `user/` has an `index.md` (current truth) and a `log/` directory (evolution evidence).
 
-**`index.md`** — always reflects CURRENT state. When something changes, rewrite it to reflect the new reality. Do not preserve stale information alongside new information — overwrite it. The index answers: "what does the PM brain believe right now?"
+**`index.md`** — always reflects CURRENT state. When something changes, rewrite it to reflect the new reality. Do not preserve stale information alongside new information — overwrite it. The index answers: "what does Draft's shared context reflect right now?"
 
 **Log entries** — capture what changed and why. Filename: `YYYYMMDDHHMMSS_brief-slug.md` where the timestamp is the current local time in 24-hour format (e.g. `20260410201927_enterprise-pivot.md` for April 10 2026 at 8:19:27 PM).
 
