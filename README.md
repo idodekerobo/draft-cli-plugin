@@ -269,8 +269,8 @@ After `/load-team`, your `context/` IS the shared brain. The agent's next sessio
 |---|---|---|
 | `context/` | Company, product, team, priorities, decisions | Yes — curator publishes, teammates load |
 | `personal/` | Your working style, AI learnings, WIP drafts | No — always local-only |
-| `config/collaboration.md` | Repo URL, teammates list | Yes — propagates via the shared repo |
-| `config/local.md` | gh auth status, last_published, last_loaded | No — machine state, never pushed |
+| `config/collaboration.json` | Repo URL, teammates list | Yes — propagates via the shared repo |
+| `config/local.json` | gh auth status, last_published, last_loaded | No — machine state, never pushed |
 
 ### Platform invocation
 
@@ -403,7 +403,7 @@ Injected on every session start via hook. Outputs a live snapshot of:
 | Context index | Frontmatter from each `context/*/index.md`: name, description, last_updated, source |
 | Current priorities | Full `context/priorities/index.md` |
 | Memory | Full `personal/memory.md` — vocabulary, preferences, patterns, goals |
-| Collaboration | Status block from `config/collaboration.md` + `config/local.md` (only if configured) |
+| Collaboration | Status block from `config/collaboration.json` + `config/local.json` (only if configured) |
 
 The pm-agent uses this as its orientation layer. When a task needs more detail than the frontmatter provides, it reads the relevant file in full.
 
@@ -537,8 +537,8 @@ All editors share the same workspace at `~/.draft/workspace/`:
 │   ├── memory.md                  ← vocabulary, preferences, patterns, goals
 │   └── wip/                       ← drafts not ready to share
 ├── config/                        ← created by /draft:setup-collab
-│   ├── collaboration.md           ← shared config (pushed to team repo)
-│   └── local.md                   ← machine state (never pushed)
+│   ├── collaboration.json         ← shared config (pushed to team repo)
+│   └── local.json                 ← machine state (never pushed)
 └── docs/                          ← written artifacts: analyses, PRDs, strategies
     YYYYMMDDHHMMSS_slug.md         (flat — no subdirectories)
 ```

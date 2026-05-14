@@ -165,8 +165,8 @@ $DRAFT_WORKSPACE/personal/
   wip/                      Drafts not ready to share
 
 $DRAFT_WORKSPACE/config/
-  collaboration.md          Team facts: mode, repo, teammates (shared to team repo when configured)
-  local.md                  Machine state: last_published, last_loaded (never pushed)
+  collaboration.json        Team facts: mode, repo, teammates (shared to team repo when configured)
+  local.json                Machine state: last_published, last_loaded (never pushed)
 
 $DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (flat — no subdirectories)
 ```

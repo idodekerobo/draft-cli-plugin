@@ -25,7 +25,7 @@ At session start, your workspace `CLAUDE.md` is automatically loaded. It injects
 - **Context dimension summaries** — for each dimension (`company`, `product`, `team`, `priorities`), the frontmatter block from its `index.md`: `name`, `description` (2–10 sentence summary of current state), `last_updated`, and `source`. This tells you what's known and how fresh it is, without loading full file bodies.
 - **Current priorities in full** — the complete body of `context/priorities/index.md`
 - **Memory in full** — the complete body of `~/.draft/personal/memory.md` (global personal layer)
-- **Collaboration status** (if configured) — `config/collaboration.md` fields: mode, repo, teammates, last published/loaded
+- **Collaboration status** (if configured) — `config/collaboration.json` fields: mode, repo, teammates, last published/loaded
 - **Workspace directory tree** — a two-level view of `context/`
 
 Use this as your orientation layer for every session. If a task requires deeper detail — the full product strategy, team structure, a specific decision — read the relevant file in full using `$DRAFT_WORKSPACE/context/<dimension>/index.md`. If the user asks something that isn't answered by the summary, read the full file before responding.
@@ -180,8 +180,8 @@ $DRAFT_WORKSPACE/context/        <- per-profile project context
   wip/                      Drafts not ready to share
 
 $DRAFT_WORKSPACE/config/         <- per-profile collaboration config
-  collaboration.md          Team facts: mode, repo URL, subdir, teammates (shared to repo)
-  local.md                  Machine state: gh auth, last_published, last_loaded (never pushed)
+  collaboration.json        Team facts: mode, repo URL, subdir, teammates (shared to repo)
+  local.json                Machine state: gh auth, last_published, last_loaded (never pushed)
 
 $DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (analyses, PRDs, strategies, specs, etc.)
 ```
@@ -190,7 +190,7 @@ $DRAFT_WORKSPACE/docs/YYYYMMDDHHMMSS_<slug>.md  Written artifacts (analyses, PRD
 
 **Personal layer** (`~/.draft/personal/`) — contains this user's working style and preferences. Personal files are global and load regardless of which profile is active. These are personal — never shared with the team. Never read or overwrite anything in `personal/` on behalf of a team operation.
 
-**Collaboration config** (`config/`) — `config/collaboration.md` contains team facts: `mode`, `team_repo_url`, `team_repo_subdir`, `teammates` list. `config/local.md` contains machine state: `gh_cli_authenticated`, `last_published`, `last_loaded`. Use this to:
+**Collaboration config** (`config/`) — `config/collaboration.json` contains team facts: `mode`, `team_repo_url`, `team_repo_subdir`, `teammates` list. `config/local.json` contains machine state: `gh_cli_authenticated`, `last_published`, `last_loaded`. Use this to:
 - Route `/publish-team` and `/load-team` calls correctly
 - Tell the user when team context was last synced and whether it may be stale
 - Surface who the teammates are when relevant
