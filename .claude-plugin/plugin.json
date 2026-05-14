@@ -1,6 +1,6 @@
 {
   "name": "draft",
-  "description": "AI-powered PM co-pilot. Helps you think, write, research, and act on your product work.",
+  "description": "Shared team context layer for AI coding agents. Install once — every session starts with full shared context, no re-explaining required.",
   "version": "2.2.0",
   "author": {
     "name": "Draft"
