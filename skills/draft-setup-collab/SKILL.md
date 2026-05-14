@@ -46,59 +46,72 @@ Detect OS:
 uname -s
 ```
 
-- macOS → "Run: `brew install gh`"
-- Linux → "Run: `sudo apt install gh`  (or see https://cli.github.com)"
+Use the **AskUserQuestion** tool to ask:
+> "gh CLI isn't installed. Install it now? (macOS: `brew install gh` / Linux: `sudo apt install gh`)"
 
-Present the install command. Ask: "Run it now? [Y/n]"
-
-If yes: execute the install command. Then run `gh auth status` again. If still not installed: hard stop — "Install gh CLI and re-run `/draft:setup-collab`."
+- If **yes**: run the appropriate install command, then re-run `gh auth status`.
+  - If still not installed: hard stop — "Install gh CLI and re-run `/draft:setup-collab`."
+- If **no**: hard stop — "gh CLI is required. Install it and re-run `/draft:setup-collab`."
 
 **If installed but not authenticated:**
 
-Run:
-```bash
-gh auth login --web
-```
+Use the **AskUserQuestion** tool to ask:
+> "You're not logged into GitHub. Authenticate now with `gh auth login --web`?"
 
-This opens the user's browser. Terminal waits for OAuth callback.
-
-If `--web` fails (SSH/headless/no browser): hard stop — "Run `gh auth login` in your terminal, then re-run `/draft:setup-collab`."
-
-After auth: verify with `gh auth status`. If still not authenticated: hard stop.
+- If **yes**: run `gh auth login --web`. This opens the user's browser — terminal waits for OAuth callback.
+  - If `--web` fails (SSH/headless/no browser): hard stop — "Run `gh auth login` in your terminal, then re-run `/draft:setup-collab`."
+  - After auth: verify with `gh auth status`. If still not authenticated: hard stop.
+- If **no**: hard stop — "GitHub auth is required. Run `gh auth login` and re-run `/draft:setup-collab`."
 
 **If installed and authenticated:** proceed to Step 2.
 
 ---
 
-## Step 2: Choose shared repo
+## Step 2: Clarify intent
 
-Ask:
-> "Where should Draft store your shared context?
->
-> A) Create a new private repo (github.com/[your-username]/draft-context)
-> B) Use an existing repo — paste the URL
->
-> [A/B]"
+Use the **AskUserQuestion** tool to ask:
+> "Are you the first person on your team setting up Draft — or are you connecting to a shared repo your teammate already configured?"
 
-**Option A — New dedicated repo:**
+- **"First person / setting it up"** → curator path → go to **Step 2a (choose repo)**
+- **"Connecting to existing"** → teammate path → go to **Step 2b (enter URL)**
+
+---
+
+## Step 2a: Choose / create repo (curator path)
 
 Get the authenticated username:
+
 ```bash
 gh api user --jq .login
 ```
 
+Use the **AskUserQuestion** tool to ask:
+> "Create a new private GitHub repo, or use one you already have?
+> A) Create new repo (default name: `draft-context`)
+> B) Use existing repo — I'll paste the URL"
+
+**Option A — New dedicated repo:**
+
+Use the **AskUserQuestion** tool to ask:
+> "What should the repo be called? (Press Enter for `draft-context`)"
+
+- If the user presses Enter or leaves blank: use `draft-context`.
+- Otherwise: use their input, slugified (lowercase, hyphens only, no spaces).
+
 Create the repo:
 ```bash
-gh repo create [username]/draft-context --private --description "Draft team context"
+gh repo create [username]/[repo-name] --private --description "Draft team context"
 ```
 
-Set: `team_repo_url = github.com/[username]/draft-context`, `team_repo_subdir = root`
+Set: `team_repo_url = github.com/[username]/[repo-name]`, `team_repo_subdir = root`
 
 **Option B — Existing repo:**
 
-Ask for the URL. Then ask:
-> "Which folder inside the repo should Draft write to?
-> (press Enter for `.draft`, type a path like `context` or `team-wiki`, or `/` for repo root)"
+Use the **AskUserQuestion** tool to ask:
+> "Paste the GitHub repo URL (e.g. `github.com/your-org/your-repo`):"
+
+Then use the **AskUserQuestion** tool to ask:
+> "Which folder inside that repo should Draft write to? (Press Enter for `.draft`, or type a path like `context` or `/` for root)"
 
 - Enter pressed → `team_repo_subdir = .draft`
 - `/` entered → `team_repo_subdir = root`
@@ -107,11 +120,39 @@ Ask for the URL. Then ask:
 **For either option — verify the repo:**
 
 ```bash
+gh repo view [team_repo_url] --json name,isPrivate,isEmpty
+```
+
+- If repo not found: "Can't find that repo. Check the URL and try again." Loop back to top of Step 2a.
+- If public: use the **AskUserQuestion** tool to ask:
+  > "That repo is public — your product context will be visible to anyone. Continue anyway?"
+  - If no (default): loop back to Step 2a.
+  - If yes: proceed.
+
+Proceed to **Step 3**.
+
+---
+
+## Step 2b: Connect to existing repo (teammate path)
+
+Use the **AskUserQuestion** tool to ask:
+> "Paste the GitHub repo URL your teammate shared with you:"
+
+Then use the **AskUserQuestion** tool to ask:
+> "Which folder inside that repo does Draft use? (Press Enter for `.draft`, or type the path your teammate set — usually `root` or `.draft`)"
+
+- Enter pressed → `team_repo_subdir = .draft`
+- `/` or `root` entered → `team_repo_subdir = root`
+- Custom path typed → `team_repo_subdir = [user input]`
+
+Verify the repo:
+```bash
 gh repo view [team_repo_url] --json name,isPrivate
 ```
 
-- If public: warn "This repo is public — your product context will be visible to anyone. Are you sure? [y/N]" (default: abort). If they confirm yes: proceed.
-- If not found: "Can't find that repo. Check the URL and try again." Loop back.
+If not found: "Can't reach that repo. Check the URL and your access, then try again." Hard stop.
+
+Proceed to **Step 3**.
 
 ---
 
