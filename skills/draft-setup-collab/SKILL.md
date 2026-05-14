@@ -34,14 +34,12 @@ Store the result as `ACTIVE_WORKSPACE`. Use it everywhere a workspace path is ne
 
 ## Step 1: Check gh CLI
 
-Run:
 ```bash
 gh auth status
 ```
 
 **If gh is not installed:**
 
-Detect OS:
 ```bash
 uname -s
 ```
@@ -158,22 +156,32 @@ Proceed to **Step 3**.
 
 ## Step 3: Write config files
 
-Write `$DRAFT_WORKSPACE/config/collaboration.md`:
+Create the config directory:
+```bash
+mkdir -p "[ACTIVE_WORKSPACE]/config"
+```
 
-```yaml
+Get the authenticated username:
+```bash
+gh api user --jq .login
+```
+
+Write `[ACTIVE_WORKSPACE]/config/collaboration.md`:
+
+```markdown
 ---
 mode: github
 team_repo_url: [from step 2]
 team_repo_subdir: [from step 2]
 repo_is_private: [true/false from gh repo view]
 teammates:
-  - [gh username from `gh api user --jq .login`]
+  - [gh username]
 ---
 ```
 
-Write `$DRAFT_WORKSPACE/config/local.md`:
+Write `[ACTIVE_WORKSPACE]/config/local.md`:
 
-```yaml
+```markdown
 ---
 gh_cli_authenticated: true
 last_published: null
@@ -181,78 +189,178 @@ last_loaded: null
 ---
 ```
 
-Create the config directory if it doesn't exist:
+After writing both files, verify they exist:
 ```bash
-mkdir -p "$DRAFT_WORKSPACE/config"
+ls "[ACTIVE_WORKSPACE]/config/collaboration.md" "[ACTIVE_WORKSPACE]/config/local.md"
 ```
+
+If either is missing: "Failed to write config files. Check permissions on `[ACTIVE_WORKSPACE]/config/`." Hard stop.
 
 ---
 
 ## Step 4: Check if shared repo is seeded
 
-Shallow clone to a temp directory:
-```bash
-TMPDIR=$(mktemp -d /tmp/draft-check-XXXX)
-git clone --depth 1 [team_repo_url] "$TMPDIR"
-```
+Clone to a temp directory. Use a prefixed variable name to avoid colliding with the system `$TMPDIR` env var.
 
-**Check signal:** Look for `[subdir]/config/collaboration.md` in the cloned repo.
-- Use `root` to mean the repo root (no subdir prefix).
-- Example: if `team_repo_subdir = .draft`, check for `.draft/config/collaboration.md`.
+**Handle new empty repos:** A brand-new repo has no commits and cannot be cloned normally. Detect this case first:
 
 ```bash
-# Example check (adjust path based on team_repo_subdir):
-ls "$TMPDIR/[subdir_path]/config/collaboration.md" 2>/dev/null
+DRAFT_TMP=$(mktemp -d /tmp/draft-check-XXXX)
+git clone --depth 1 [team_repo_url] "$DRAFT_TMP" 2>&1
+CLONE_EXIT=$?
 ```
 
-Then:
-```bash
-rm -rf "$TMPDIR"
-```
+Interpret the result:
 
-**If `config/collaboration.md` does NOT exist in the cloned repo:**
-- Draft has not been configured at this location. This user is the curator. → Go to Step 5 (auto-seed).
+- **Exit 0 (clone succeeded):** Repo has content. Check for the seeded signal:
+  ```bash
+  # Adjust check path based on team_repo_subdir:
+  # root → DRAFT_TMP/config/collaboration.md
+  # .draft → DRAFT_TMP/.draft/config/collaboration.md
+  # custom → DRAFT_TMP/[subdir]/config/collaboration.md
+  ls "[DRAFT_TMP]/[subdir_path]/config/collaboration.md" 2>/dev/null && echo "SEEDED" || echo "NOT_SEEDED"
+  ```
+  Then: `rm -rf "$DRAFT_TMP"`
 
-**If `config/collaboration.md` exists:**
-- Existing Draft setup found. This user is a teammate connecting to an existing repo. → Skip to Step 6.
+- **Non-zero exit with "empty repository" or "remote HEAD refers to nonexistent ref" in output:** Brand new empty repo. This is the curator path — treat as `NOT_SEEDED`.
+  Then: `rm -rf "$DRAFT_TMP"`
 
-**NOTE:** Check `config/collaboration.md` — NOT `CHANGES.jsonl`. `config/collaboration.md` is the authoritative signal that Draft has been set up here. `CHANGES.jsonl` may legitimately be absent between setup and first `/publish-team`.
+- **Non-zero exit with another error (auth, not found, network):** Print the error. Hard stop — "Could not reach the repo. Check your access and try again."
+  Then: `rm -rf "$DRAFT_TMP"`
+
+**If `NOT_SEEDED`:** Draft has not been configured here. This user is the curator. → Go to Step 5 (seed).
+
+**If `SEEDED`:** Existing Draft setup found. This user is a teammate. → Go to Step 6 (teammate complete).
 
 ---
 
-## Step 5: Auto-seed (curator path only)
+## Step 5: Seed the shared repo (curator path only)
 
-Run the `/draft:publish-team` flow with `--no-confirm` flag. This seeds the shared repo with the current workspace context.
+Show: "Seeding the shared repo with your current context..."
 
-Show: "Seeding shared repo with your current context..."
+Execute the publish flow inline (do not rely on a flag — run the steps directly):
 
-After publish completes successfully: `last_published` is updated in `config/local.md` by the publish flow.
+**5a. Collect context to publish:**
 
-If publish fails: "Initial publish failed. Run `/publish-team` when you're ready to share your context."
+```bash
+ls "[ACTIVE_WORKSPACE]/context/"
+```
+
+Check which dimension `index.md` files have real content (description is not "No information recorded yet"):
+
+```bash
+python3 -c "
+from pathlib import Path
+ws = Path('[ACTIVE_WORKSPACE]')
+dims = ['company', 'product', 'team', 'priorities']
+for dim in dims:
+    idx = ws / 'context' / dim / 'index.md'
+    if idx.exists():
+        text = idx.read_text()
+        has_content = 'No information recorded yet' not in text and len(text.strip()) > 50
+        print(f'{dim}:{\"yes\" if has_content else \"no\"}')
+"
+```
+
+**5b. Clone repo, write files, push:**
+
+```bash
+DRAFT_SEED=$(mktemp -d /tmp/draft-seed-XXXX)
+git clone [team_repo_url] "$DRAFT_SEED" 2>&1
+SEED_CLONE_EXIT=$?
+```
+
+- If clone fails with "empty repository": initialize the first commit:
+  ```bash
+  git -C "$DRAFT_SEED" init
+  git -C "$DRAFT_SEED" remote add origin [full_https_team_repo_url]
+  ```
+
+Set the subdir prefix:
+```bash
+# team_repo_subdir = root → SEED_TARGET="$DRAFT_SEED"
+# team_repo_subdir = .draft → SEED_TARGET="$DRAFT_SEED/.draft"
+# team_repo_subdir = custom → SEED_TARGET="$DRAFT_SEED/[custom]"
+mkdir -p "$SEED_TARGET/context" "$SEED_TARGET/config"
+```
+
+Copy context and config:
+```bash
+cp -r "[ACTIVE_WORKSPACE]/context/" "$SEED_TARGET/context/"
+cp "[ACTIVE_WORKSPACE]/config/collaboration.md" "$SEED_TARGET/config/collaboration.md"
+```
+
+Build an initial `CHANGES.jsonl` entry:
+```bash
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+gh_username=$(gh api user --jq .login)
+id=$(echo -n "${ts}${gh_username}setup" | shasum -a 256 | cut -c1-8)
+echo "{\"id\":\"${id}\",\"ts\":\"${ts}\",\"author\":\"${gh_username}\",\"dimension\":\"all\",\"summary\":\"Initial Draft setup — context seeded by curator\",\"file\":\"context/\",\"log_entry\":null}" > "$SEED_TARGET/CHANGES.jsonl"
+```
+
+Stage, commit, push:
+```bash
+git -C "$DRAFT_SEED" add .
+git -C "$DRAFT_SEED" commit -m "Initial Draft setup — context seeded"
+git -C "$DRAFT_SEED" push origin HEAD:main 2>&1 || git -C "$DRAFT_SEED" push origin HEAD:master 2>&1
+PUSH_EXIT=$?
+```
+
+Clean up:
+```bash
+rm -rf "$DRAFT_SEED"
+```
+
+- **If push succeeded (exit 0):** Update `[ACTIVE_WORKSPACE]/config/local.md` — set `last_published` to the current ISO 8601 timestamp. → Go to Step 6 (curator complete).
+- **If push failed:** Print the error. "Initial publish failed — your config is saved locally. Run `/draft:publish-team` when you're ready to share your context." → Go to Step 6 (curator complete, with publish-failed note).
 
 ---
 
 ## Step 6: Confirm and next steps
 
-**If auto-seeded (curator path):**
+**Curator path (seeded successfully):**
 
-Get the gh username and org from the team_repo_url to construct the settings URL.
-
-Print:
-```
-Done. Your context is live.
-
-Share this with your teammates: [team_repo_url]
-Add them as collaborators: https://github.com/[org]/[repo]/settings/access
-
-They'll configure Draft to use this repo when they run /draft:setup.
-```
-
-**If connected to existing (teammate path):**
+Get the org/user and repo name from `team_repo_url` to construct URLs.
 
 Print:
 ```
-Done. You're connected to [team_repo_url].
+✓ Collaboration configured.
 
-Run /load-team to pull your team's latest context into this session.
+Repo:     [full team_repo_url]
+Subdir:   [team_repo_subdir]
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+
+Your context is live. Share this with your teammates:
+  Repo URL:         https://[team_repo_url]
+  Collaborators:    https://github.com/[org]/[repo]/settings/access
+
+When a teammate runs /draft:setup, they'll be asked if they want to connect
+to a shared repo — they should answer "connecting to existing" and paste this URL.
+
+Run /draft:publish-team whenever your context changes to push updates.
+```
+
+**Curator path (publish failed):**
+
+Print:
+```
+✓ Collaboration configured — config saved locally.
+
+Repo:     [full team_repo_url]
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+
+Initial publish failed (see error above). Run /draft:publish-team when ready to push your context.
+```
+
+**Teammate path (connected to existing repo):**
+
+Print:
+```
+✓ Connected to team repo.
+
+Repo:     [full team_repo_url]
+Subdir:   [team_repo_subdir]
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+
+Run /draft:load-team to pull your team's latest context into this workspace.
 ```
