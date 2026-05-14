@@ -13,7 +13,7 @@
 ```bash
 /plugin marketplace add idodekerobo/draft-cli-plugin
 /plugin install draft
-/draft:setup
+/draft-setup
 ```
 
 ### Codex
