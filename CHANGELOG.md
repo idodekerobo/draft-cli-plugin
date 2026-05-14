@@ -13,6 +13,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [2.2.0] — 2026-05-14
 
+---
+
+## [2.2.0] — 2026-05-14
+
 ### Changed — Config files migrated from markdown frontmatter to JSON
 
 - **`skills/draft-setup-collab/SKILL.md`**, **`skills/draft-publish-team/SKILL.md`**, **`skills/draft-load-team/SKILL.md`**, **`scripts/inject-context.sh`**, **`scripts/cursor-session-start.sh`**, **`agents/pm-agent.md`**, **`.codex/AGENTS.md`**, **`README.md`** — collaboration config files migrated from markdown with YAML frontmatter to proper JSON:
