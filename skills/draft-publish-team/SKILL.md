@@ -17,10 +17,10 @@ Push your local product context to the shared team repo so teammates can load it
 
 ## Step 1: Read config and verify auth
 
-Read `$DRAFT_WORKSPACE/config/collaboration.md`.
-Read `$DRAFT_WORKSPACE/config/local.md`.
+Read `$DRAFT_WORKSPACE/config/collaboration.json` using `json.loads()`.
+Read `$DRAFT_WORKSPACE/config/local.json` using `json.loads()`.
 
-If `config/collaboration.md` is missing or `mode` is not `github`:
+If `config/collaboration.json` is missing or `mode` is not `github`:
 ```
 Error: Collaboration not configured. Run /draft:setup-collab first.
 ```
@@ -41,9 +41,9 @@ Hard stop.
 
 ## Step 2: Collect changes
 
-Read all files in `$DRAFT_WORKSPACE/context/*/log/` with modification timestamps newer than `config/local.md:last_published`.
+Read all files in `$DRAFT_WORKSPACE/context/*/log/` with modification timestamps newer than `config/local.json:last_published`.
 
-- If `last_published` is `null`: this is the first manual publish — read ALL log entries.
+- If `last_published` is `null` (from `local.json`): this is the first manual publish — read ALL log entries.
 - If no log/ directories exist or they are empty: no log-based entries.
 
 **Case: `last_published` is null AND no log entries exist**
@@ -81,7 +81,7 @@ Publishing to: [team_repo_url] / [team_repo_subdir]
 Changes:
   [N] entries across [dimensions list]
   [list of summaries, truncated at 80 chars each]
-Teammates: [list from collaboration.md]
+Teammates: [list from collaboration.json]
 
 Confirm? [Y/n]
 ```
@@ -122,7 +122,7 @@ cp -r "$DRAFT_WORKSPACE/context/" "$SUBDIR_PATH/context/"
 
 Copy collaboration config:
 ```bash
-cp "$DRAFT_WORKSPACE/config/collaboration.md" "$SUBDIR_PATH/config/collaboration.md"
+cp "$DRAFT_WORKSPACE/config/collaboration.json" "$SUBDIR_PATH/config/collaboration.json"
 ```
 
 Build `CHANGES.jsonl`:
@@ -152,7 +152,7 @@ git -C "$TMPDIR" push
 ```bash
 rm -rf "$TMPDIR"
 ```
-Print the error. DO NOT update `config/local.md`.
+Print the error. DO NOT update `config/local.json`.
 ```
 Publish failed. Check your network and repo access, then try again. Nothing was changed locally.
 ```
@@ -166,8 +166,8 @@ rm -rf "$TMPDIR"
 
 ## Step 5: Update local state (success only)
 
-Update `$DRAFT_WORKSPACE/config/local.md`:
-- Set `last_published` to current ISO 8601 timestamp.
+Update `$DRAFT_WORKSPACE/config/local.json`:
+- Read the file with `json.loads()`, set `last_published` to the current ISO 8601 timestamp, write back with `json.dumps()`.
 
 Print:
 ```

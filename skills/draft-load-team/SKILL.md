@@ -17,10 +17,10 @@ Your `personal/` layer is never touched by this command.
 
 ## Step 1: Read config and verify auth
 
-Read `$DRAFT_WORKSPACE/config/collaboration.md`.
-Read `$DRAFT_WORKSPACE/config/local.md`.
+Read `$DRAFT_WORKSPACE/config/collaboration.json` using `json.loads()`.
+Read `$DRAFT_WORKSPACE/config/local.json` using `json.loads()`.
 
-If `config/collaboration.md` is missing or `mode` is not `github`:
+If `config/collaboration.json` is missing or `mode` is not `github`:
 ```
 Error: Collaboration not configured. Run /draft:setup-collab first.
 ```
@@ -53,7 +53,7 @@ rm -rf "$TMPDIR"
 ```
 Couldn't reach [team_repo_url]. Check your network and repo access.
 ```
-Exit 1. DO NOT update `config/local.md`.
+Exit 1. DO NOT update `config/local.json`.
 
 Set the subdir prefix based on `team_repo_subdir`:
 ```bash
@@ -80,13 +80,32 @@ Exit 0.
 
 ## Step 3: Merge shared config
 
-Read `$SUBDIR_PATH/config/collaboration.md`.
+Read `$SUBDIR_PATH/config/collaboration.json` using `json.loads()`.
 
-Repo version wins: overwrite all shared fields (`mode`, `team_repo_url`, `team_repo_subdir`, `repo_is_private`, `teammates`) in local `$DRAFT_WORKSPACE/config/collaboration.md` with repo values.
+Merge into local `$DRAFT_WORKSPACE/config/collaboration.json` using the following logic — repo wins for all fields, **except `teammates` which is a union merge** (deduplicated, repo order preserved):
 
-**Never touch `config/local.md`** — machine state is always local-only.
+```python
+import json
+from pathlib import Path
 
-This is how new teammates added by the curator propagate automatically to all existing teammates.
+local_path = Path(ACTIVE_WORKSPACE) / 'config' / 'collaboration.json'
+repo_path = Path(SUBDIR_PATH) / 'config' / 'collaboration.json'
+
+local_config = json.loads(local_path.read_text())
+repo_config = json.loads(repo_path.read_text())
+
+# Merge: repo wins for all fields, but teammates is a union
+merged = {**repo_config}
+local_teammates = local_config.get('teammates', [])
+repo_teammates = repo_config.get('teammates', [])
+merged['teammates'] = list(dict.fromkeys(repo_teammates + local_teammates))  # deduped, order preserved
+
+local_path.write_text(json.dumps(merged, indent=2))
+```
+
+**Never touch `config/local.json`** — machine state is always local-only.
+
+This is how new teammates added by the curator propagate automatically to all existing teammates. The union merge ensures a teammate's own handle is never removed from their local copy.
 
 ---
 
@@ -94,8 +113,8 @@ This is how new teammates added by the curator propagate automatically to all ex
 
 Read all entries from `CHANGES.jsonl` (one JSON object per line).
 
-Filter: keep entries where `ts` > `config/local.md:last_loaded`
-- If `last_loaded` is `null`: keep ALL entries (initial load).
+Filter: keep entries where `ts` > `config/local.json:last_loaded`
+- If `last_loaded` is `null` (from `local.json`): keep ALL entries (initial load).
 
 Deduplicate: build a set of `id` values already seen; skip any duplicate IDs.
 
@@ -146,5 +165,5 @@ Team context loaded: [N] changes since [last_loaded or "initial load"]
   • [dimension]: [summary]
 ```
 
-Update `$DRAFT_WORKSPACE/config/local.md`:
-- Set `last_loaded` to current ISO 8601 timestamp.
+Update `$DRAFT_WORKSPACE/config/local.json`:
+- Read the file with `json.loads()`, set `last_loaded` to the current ISO 8601 timestamp, write back with `json.dumps()`.

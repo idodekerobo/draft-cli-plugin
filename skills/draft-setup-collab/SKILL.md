@@ -166,32 +166,31 @@ Get the authenticated username:
 gh api user --jq .login
 ```
 
-Write `[ACTIVE_WORKSPACE]/config/collaboration.md`:
+Write `[ACTIVE_WORKSPACE]/config/collaboration.json`:
 
-```markdown
----
-mode: github
-team_repo_url: [from step 2]
-team_repo_subdir: [from step 2]
-repo_is_private: [true/false from gh repo view]
-teammates:
-  - [gh username]
----
+```json
+{
+  "mode": "github",
+  "team_repo_url": "[from step 2]",
+  "team_repo_subdir": "[from step 2]",
+  "repo_is_private": true/false,
+  "teammates": ["[gh username]"]
+}
 ```
 
-Write `[ACTIVE_WORKSPACE]/config/local.md`:
+Write `[ACTIVE_WORKSPACE]/config/local.json`:
 
-```markdown
----
-gh_cli_authenticated: true
-last_published: null
-last_loaded: null
----
+```json
+{
+  "gh_cli_authenticated": true,
+  "last_published": null,
+  "last_loaded": null
+}
 ```
 
 After writing both files, verify they exist:
 ```bash
-ls "[ACTIVE_WORKSPACE]/config/collaboration.md" "[ACTIVE_WORKSPACE]/config/local.md"
+ls "[ACTIVE_WORKSPACE]/config/collaboration.json" "[ACTIVE_WORKSPACE]/config/local.json"
 ```
 
 If either is missing: "Failed to write config files. Check permissions on `[ACTIVE_WORKSPACE]/config/`." Hard stop.
@@ -215,10 +214,10 @@ Interpret the result:
 - **Exit 0 (clone succeeded):** Repo has content. Check for the seeded signal:
   ```bash
   # Adjust check path based on team_repo_subdir:
-  # root → DRAFT_TMP/config/collaboration.md
-  # .draft → DRAFT_TMP/.draft/config/collaboration.md
-  # custom → DRAFT_TMP/[subdir]/config/collaboration.md
-  if ls "[DRAFT_TMP]/[subdir_path]/config/collaboration.md" 2>/dev/null; then
+  # root → DRAFT_TMP/config/collaboration.json
+  # .draft → DRAFT_TMP/.draft/config/collaboration.json
+  # custom → DRAFT_TMP/[subdir]/config/collaboration.json
+  if ls "[DRAFT_TMP]/[subdir_path]/config/collaboration.json" 2>/dev/null; then
     echo "SEEDED"
   else
     echo "NOT_SEEDED"
@@ -291,7 +290,7 @@ mkdir -p "$SEED_TARGET/context" "$SEED_TARGET/config"
 Copy context and config:
 ```bash
 cp -r "[ACTIVE_WORKSPACE]/context/" "$SEED_TARGET/context/"
-cp "[ACTIVE_WORKSPACE]/config/collaboration.md" "$SEED_TARGET/config/collaboration.md"
+cp "[ACTIVE_WORKSPACE]/config/collaboration.json" "$SEED_TARGET/config/collaboration.json"
 ```
 
 Build an initial `CHANGES.jsonl` entry:
@@ -315,7 +314,7 @@ Clean up:
 rm -rf "$DRAFT_SEED"
 ```
 
-- **If push succeeded (exit 0):** Update `[ACTIVE_WORKSPACE]/config/local.md` — set `last_published` to the current ISO 8601 timestamp. → Go to Step 6 (curator complete).
+- **If push succeeded (exit 0):** Update `[ACTIVE_WORKSPACE]/config/local.json` — read the file with `json.loads()`, set `last_published` to the current ISO 8601 timestamp, write back with `json.dumps()`. → Go to Step 6 (curator complete).
 - **If push failed:** Print the error. "Initial publish failed — your config is saved locally. Run `/draft:publish-team` when you're ready to share your context." → Go to Step 6 (curator complete, with publish-failed note).
 
 ---
@@ -332,7 +331,7 @@ Print:
 
 Repo:     [full team_repo_url]
 Subdir:   [team_repo_subdir]
-Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.json
 
 Your context is live. Share this with your teammates:
   Repo URL:         https://[team_repo_url]
@@ -351,7 +350,7 @@ Print:
 ✓ Collaboration configured — config saved locally.
 
 Repo:     [full team_repo_url]
-Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.json
 
 Initial publish failed (see error above). Run /draft:publish-team when ready to push your context.
 ```
@@ -364,7 +363,7 @@ Print:
 
 Repo:     [full team_repo_url]
 Subdir:   [team_repo_subdir]
-Config:   [ACTIVE_WORKSPACE]/config/collaboration.md
+Config:   [ACTIVE_WORKSPACE]/config/collaboration.json
 
 Run /draft:load-team to pull your team's latest context into this workspace.
 ```
