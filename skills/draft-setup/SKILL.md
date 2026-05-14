@@ -310,19 +310,19 @@ If the user says **"skip"** at any point, stop the interview immediately and say
 
 ### Q1 — What you're building
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > "What are you building, and who's it for? Give me the one-liner."
 
 Listen for: product name, problem being solved, target customer, stage (pre-launch / early users / scaling / growth).
 
-If the answer is vague on the customer, probe once:
+If the answer is vague on the customer, probe once using the **AskUserQuestion** tool:
 > "Who specifically — a job title, a type of company, a situation they're in?"
 
 ---
 
 ### Q2 — Distribution and traction
 
-Ask, adapted to stage:
+Use the **AskUserQuestion** tool to ask, adapted to stage:
 - **Pre-launch:** "Who are you building with right now — any design partners or early testers?"
 - **Post-launch:** "How do users find you today, and how many do you have?"
 
@@ -334,7 +334,7 @@ Skip this question if they already answered it in Q1.
 
 ### Q3 — Team
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > "What does your team look like?"
 
 Listen for: team size, who does what (eng, design, PM, founders), whether they're solo. One follow-up max if the answer is thin. Keep this short.
@@ -343,19 +343,19 @@ Listen for: team size, who does what (eng, design, PM, founders), whether they'r
 
 ### Q4 — Current focus
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > "What's the most important thing you're working on right now?"
 
 Listen for: specific milestone or sprint goal, the bet they're making, blockers, what success looks like this week or month.
 
-If vague, probe once:
+If vague, probe once using the **AskUserQuestion** tool:
 > "What would make this week a win?"
 
 ---
 
 ### Q5 — How you work
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > "What tools do you use day-to-day, and what does a typical week look like?"
 
 Listen for: project management (Linear, Jira, Notion), communication (Slack, email), planning cadence, how decisions get made.
@@ -375,7 +375,7 @@ If **no**: Continue to Q6 normally. No config files created.
 
 ### Q6 — Hardest problem
 
-Ask:
+Use the **AskUserQuestion** tool to ask:
 > "What's the hardest PM problem you're dealing with right now?"
 
 This is the most important question. Let them answer fully — don't rush or redirect. Listen for the actual underlying tension.
@@ -437,15 +437,11 @@ End with one sharp, specific question grounded in what you just learned. Base it
 
 ## Re-run flow
 
-If context files already have content, start with:
-
-> "Your PM brain already has context. Here's what I have:
-> [show one-line description per dimension — read from frontmatter]
->
-> Want to do a full refresh, or just tell me what's changed?"
+If context files already have content, show a one-line description per dimension (read from frontmatter), then use the **AskUserQuestion** tool to ask:
+> "Your PM brain already has context. Want to do a full refresh, or just tell me what's changed?"
 
 - **Full refresh**: run the interview from Q1, overwrite all context files
-- **What's changed**: ask "Walk me through what's different since we last synced." Then call @draft-learner to update only the relevant dimensions and write log entries for any changes to `product/` or `priorities/`.
+- **What's changed**: use the **AskUserQuestion** tool to ask "Walk me through what's different since we last synced." Then call @draft-learner to update only the relevant dimensions and write log entries for any changes to `product/` or `priorities/`.
 
 ---
 
