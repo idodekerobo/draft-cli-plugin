@@ -13,6 +13,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [2.2.1] — 2026-05-14
 
+---
+
+## [2.2.1] — 2026-05-14
+
 ### Changed — Rebrand: pm-agent → draft-agent, "PM brain" → "shared team context layer"
 
 - **`agents/pm-agent.md`** — renamed to `agents/draft-agent.md`. Frontmatter `name` updated to `draft-agent`. Description updated to reflect shared context layer framing.
