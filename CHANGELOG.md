@@ -11,7 +11,36 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [2.0.0] — 2026-05-13
+## [2.1.0] — 2026-05-14
+
+### Fixed — Profile switching, collaboration setup, UX, and shell safety
+
+#### Profile switching
+
+- **`scripts/session-init.sh`** — root cause fix for profile switches never taking effect. The script was hardcoding `DRAFT_WORKSPACE=~/.draft/workspace` (old pre-multi-profile path) into `settings.json` on every session, permanently overriding the profile system. Now reads `~/.draft/active-profile` dynamically each session and writes the correct profile-resolved path to `settings.json`. `additionalDirectories` broadened from a single workspace path to `~/.draft/workspaces/` so all profiles are covered without per-profile permission updates.
+- **`scripts/inject-context.sh`** — unsets any externally-set `$DRAFT_WORKSPACE` at startup so `active-profile` is always authoritative. Previously the "externally set → use as-is" branch silently ignored the profile system whenever `settings.json` had a stale value (which was always, due to the session-init bug). Now always computes the workspace path fresh from `active-profile`. Also outputs `DRAFT_WORKSPACE` path into Claude's session context (stdout) so the correct path is available to the agent even before `settings.json` catches up on the next restart.
+- **`skills/draft-switch/SKILL.md`** — complete rewrite. Added Step 0 (explicit argument extraction from the slash command invocation). Added Step 1 (list all available profiles upfront as structured output). Replaced the binary found/not-found response with smart matching: exact match → switch immediately; close match → `AskUserQuestion` offering the suggestion; no match → `AskUserQuestion` offering to create a new profile with that name; no profiles at all → prompt to run `/draft:profiles create`.
+
+#### Collaboration setup
+
+- **`skills/draft-setup-collab/SKILL.md`** — major reliability and UX overhaul:
+  - Added Step 0: resolves workspace path at runtime from `active-profile` instead of relying on `$DRAFT_WORKSPACE`, which may be stale.
+  - All user-facing prompts now use the `AskUserQuestion` tool (previously used inline text).
+  - Step 2 restructured: added curator-vs-teammate intent question upfront before the repo choice, so users know which path they're on before making decisions.
+  - Option A (new repo) now prompts for a repo name with `draft-context` as the default — previously hardcoded.
+  - Renamed `TMPDIR` variable to `DRAFT_TMP` throughout to avoid collision with the system `$TMPDIR` environment variable, which would break subsequent `mktemp` calls.
+  - Step 4 (seed check): fixed empty-repo clone handling. A brand-new repo has no commits and `git clone --depth 1` exits non-zero with a recognizable message; this is now treated as `NOT_SEEDED` (curator path) rather than an error.
+  - Step 5 (auto-seed): replaced vague "run publish-team with `--no-confirm`" with explicit inline steps — clone, set subdir, copy files, build `CHANGES.jsonl`, commit, push. First-commit case (empty repo) is handled.
+  - Step 6 completion messages expanded: three distinct states (seeded, publish failed, teammate connected), each with confirmation, repo URL, config path, and actionable next steps.
+
+#### AskUserQuestion in setup interview
+
+- **`skills/draft-setup/SKILL.md`** — all 9 interview prompts that were using bare `Ask: "..."` inline text now use the `AskUserQuestion` tool: Q1, Q1 probe, Q2, Q3, Q4, Q4 probe, Q5, Q6, and both branches of the re-run flow (full refresh / what's changed).
+
+#### Shell syntax safety
+
+- **`skills/draft-setup-collab/SKILL.md`** — replaced `ls ... && echo "SEEDED" || echo "NOT_SEEDED"` with an explicit `if/else` block. The `A && B || C` chain pattern has non-obvious operator precedence (C fires if A *or* B fails, not just A) and triggers Claude Code's bash static analyzer.
+- **`agents/pm-agent.md`** — added explicit rule prohibiting the `A && B || C` bash chain pattern in any generated bash. Always use `if/else` for conditional output.
 
 ---
 
