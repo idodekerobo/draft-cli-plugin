@@ -78,7 +78,7 @@ If either exists:
    - Move `memory/memory.md` → `personal/memory.md`
    - Scan `~/.draft/workspace/memory/` for any other files — move those too
    - Create `~/.draft/workspace/config/` directory if not exists
-   - Create blank `~/.draft/workspace/config/collaboration.md` and `~/.draft/workspace/config/local.md` if they don't exist (do not overwrite if already present)
+   - Create blank `~/.draft/workspace/config/collaboration.json` and `~/.draft/workspace/config/local.json` if they don't exist (do not overwrite if already present)
    - Remove now-empty `context/user/` and `memory/` directories if they are empty
 
 4. Report exactly what was moved. If anything looked unexpected (extra files, conflicts), surface it to the user.

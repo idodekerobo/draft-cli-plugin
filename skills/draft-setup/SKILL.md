@@ -143,7 +143,7 @@ else:
                   shutil.copy2(item, dest)
           migrated.append("docs/")
 
-      # Config (collaboration.md, local.md — preserves team sharing setup)
+      # Config (collaboration.json, local.json — preserves team sharing setup)
       old_config = old_ws / "config"
       if old_config.exists():
           for f in old_config.iterdir():
