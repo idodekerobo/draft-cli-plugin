@@ -11,6 +11,23 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.2.0] — 2026-05-14
+
+### Changed — Config files migrated from markdown frontmatter to JSON
+
+- **`skills/draft-setup-collab/SKILL.md`**, **`skills/draft-publish-team/SKILL.md`**, **`skills/draft-load-team/SKILL.md`**, **`scripts/inject-context.sh`**, **`scripts/cursor-session-start.sh`**, **`agents/pm-agent.md`**, **`.codex/AGENTS.md`**, **`README.md`** — collaboration config files migrated from markdown with YAML frontmatter to proper JSON:
+  - `config/collaboration.md` → `config/collaboration.json`
+  - `config/local.md` → `config/local.json`
+  - All reads now use `json.loads()` instead of a YAML frontmatter parser. All writes use `json.dumps()`.
+
+### Fixed
+
+- **`skills/draft-load-team/SKILL.md`** — `/load-team` previously overwrote the local `collaboration.json` entirely with the repo version. This caused a teammate's own handle to be silently dropped from the `teammates` array (because the curator's copy only contains the curator). Step 3 now performs a **union merge** on the `teammates` field: repo wins for all other fields, but `teammates` is the deduplicated union of local + repo arrays. Local handles are never lost on load.
+- **`scripts/inject-context.sh`**, **`scripts/cursor-session-start.sh`** — the YAML frontmatter parser used for the collaboration status block silently dropped array values — the `teammates` list always rendered as `—`. The JSON reader correctly parses the `teammates` array and renders it as a comma-joined string.
+- **`scripts/cursor-session-start.sh`** — added collaboration status block (was missing — parity gap vs `inject-context.sh`). Now reads `collaboration.json` and `local.json` and outputs the same collaboration section that Claude Code / Codex sessions see.
+
+---
+
 ## [2.1.0] — 2026-05-14
 
 ---
