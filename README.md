@@ -44,7 +44,7 @@ You open a new Claude session. It doesn't know what you shipped last week. It do
 
 That's the default. Every session starts blank.
 
-Draft fixes two things that make this worse over time:
+Draft fixes three things that make this worse over time:
 
 **Context amnesia** — the blank slate problem. Without Draft, you're re-explaining your product, your stack, your priorities at the start of every session. It's not just annoying — it means Claude is reasoning from whatever scraps you happened to paste in, not from a real picture of what you're building. Draft's session hook injects a live snapshot of your full product context (company, product, team, priorities, memory) before you type a single word.
 
@@ -52,7 +52,11 @@ Draft fixes two things that make this worse over time:
 
 Draft solves this with an append-only log and a persistent index of recent changes. Every time something meaningful happens — a decision, a scope change, something shipped or dropped — `draft-learner` logs it and updates the index. That index loads in every session automatically. So even if your full context documents haven't been touched in weeks, the session always knows what just happened.
 
-The feeling: your AI tool behaves like a collaborator who was in every previous session — not a new hire you brief from scratch each time.
+**Context isolation** — the team problem. Everyone on your team has their own blank slate. Your AI has your context. Their AI has none — or a stale copy they pasted into a `CLAUDE.md` months ago. Every new collaborator starts cold.
+
+Draft makes shared context a first-class feature. One person runs `/publish-team` to push the current context to a shared private repo. Everyone else runs `/load-team` to pull it into their own session. The next time any of them opens Claude Code, Codex, or Cursor — their session starts with the same product context yours does. No syncs, no docs to maintain, no onboarding overhead.
+
+The feeling: every member of your team has an AI that was in the same room as everyone else.
 
 ---
 
