@@ -7,14 +7,19 @@
 # stdout: formatted context injected into Claude's system prompt
 # stderr: profile banner, migration notices
 #
-# Profile resolution order:
-#   0. If $DRAFT_WORKSPACE is set externally, use it (banner shows path, not name)
-#   1. Read ~/.draft/active-profile → get profile name
-#   2. Set DRAFT_WORKSPACE=~/.draft/workspaces/<profile-name>
+# Profile resolution:
+#   Always reads ~/.draft/active-profile to determine which workspace to load.
+#   Any externally-set $DRAFT_WORKSPACE is intentionally unset so the profile
+#   system is always authoritative. session-init.sh keeps settings.json in sync
+#   so bash tool calls use the correct path after one restart.
 #
 # Personal layer: always at ~/.draft/personal/ (global — shared across all profiles)
 
 DRAFT_GLOBAL="$HOME/.draft"
+
+# Unset any externally-set DRAFT_WORKSPACE so profile resolution is always
+# driven by active-profile — never overridden by a stale settings.json value.
+unset DRAFT_WORKSPACE
 
 # ── Migration: workspace/ → workspaces/default/ ────────────────────────────────
 # Runs once for existing users upgrading to multi-profile support.
@@ -58,44 +63,34 @@ if [ -z "${DRAFT_WORKSPACE:-}" ] && [ -d "$DRAFT_GLOBAL/workspace" ] && [ ! -d "
 fi
 
 # ── Profile resolution ─────────────────────────────────────────────────────────
-if [ -n "${DRAFT_WORKSPACE:-}" ]; then
-    # Externally set — use it as-is; banner shows path (no profile name available)
-    # Platform: Claude Code / Codex — banner to stderr
-    echo "[Draft] Active workspace: $DRAFT_WORKSPACE" >&2
-else
-    _active_profile_file="$DRAFT_GLOBAL/active-profile"
-    _active_profile=""
+# Always compute DRAFT_WORKSPACE from active-profile. Never rely on an externally-
+# set value — session-init.sh keeps settings.json current for bash tool calls.
 
-    if [ -f "$_active_profile_file" ]; then
-        _active_profile=$(tr -d '[:space:]' < "$_active_profile_file")
-    fi
+_active_profile_file="$DRAFT_GLOBAL/active-profile"
+_active_profile=""
 
-    if [ -z "$_active_profile" ]; then
-        # No active-profile set
-        if [ -d "$DRAFT_GLOBAL/workspaces" ]; then
-            if [ -d "$DRAFT_GLOBAL/workspaces/default" ]; then
-                # Fall back to default if it exists
-                _active_profile="default"
-            else
-                echo "[Draft] No active profile set. Run /draft:profiles to create one." >&2
-                exit 0
-            fi
-        else
-            # Net-new install — silent default (setup will create the directory)
-            _active_profile="default"
-        fi
-    fi
-
-    DRAFT_WORKSPACE="$DRAFT_GLOBAL/workspaces/$_active_profile"
-
-    if [ ! -d "$DRAFT_WORKSPACE" ] && [ -d "$DRAFT_GLOBAL/workspaces" ]; then
-        echo "[Draft] Profile '$_active_profile' not found. Run /draft:profiles to see available profiles." >&2
-        exit 0
-    fi
-
-    # Platform: Claude Code / Codex — banner to stderr
-    echo "[Draft] Active profile: $_active_profile" >&2
+if [ -f "$_active_profile_file" ]; then
+    _active_profile=$(tr -d '[:space:]' < "$_active_profile_file")
 fi
+
+if [ -z "$_active_profile" ]; then
+    # No active-profile set
+    if [ -d "$DRAFT_GLOBAL/workspaces/default" ]; then
+        _active_profile="default"
+    else
+        # Net-new install — silent default (setup will create the directory)
+        _active_profile="default"
+    fi
+fi
+
+DRAFT_WORKSPACE="$DRAFT_GLOBAL/workspaces/$_active_profile"
+
+if [ ! -d "$DRAFT_WORKSPACE" ] && [ -d "$DRAFT_GLOBAL/workspaces" ]; then
+    echo "[Draft] Profile '$_active_profile' not found. Run /draft:profiles to see available profiles." >&2
+    exit 0
+fi
+
+echo "[Draft] Active profile: $_active_profile" >&2
 
 export DRAFT_WORKSPACE
 DRAFT_PERSONAL="$DRAFT_GLOBAL/personal"
@@ -107,6 +102,9 @@ if [ ! -d "$DRAFT_WORKSPACE/context" ]; then
 fi
 
 echo "# Draft — Workspace Context"
+echo ""
+echo "**Active profile:** $_active_profile"
+echo "**DRAFT_WORKSPACE:** $DRAFT_WORKSPACE"
 echo ""
 echo "## Workspace structure"
 tree -L 2 --charset ascii "$DRAFT_WORKSPACE/context/" 2>/dev/null || echo "(context/ not found — run /draft:setup)"
