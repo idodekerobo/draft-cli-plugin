@@ -13,6 +13,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [2.1.0] — 2026-05-14
 
+---
+
+## [2.1.0] — 2026-05-14
+
 ### Fixed — Profile switching, collaboration setup, UX, and shell safety
 
 #### Profile switching
