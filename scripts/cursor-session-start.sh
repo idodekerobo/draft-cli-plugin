@@ -173,6 +173,27 @@ if mem_file.exists():
 else:
     parts.append("No memory yet.")
 
+# ── Collaboration status (per-profile — reads from active workspace config/) ───
+_collab = Path(ws) / "config" / "collaboration.json"
+_local_cfg = Path(ws) / "config" / "local.json"
+if _collab.exists():
+    try:
+        import json as _json
+        _c = _json.loads(_collab.read_text())
+        _l = _json.loads(_local_cfg.read_text()) if _local_cfg.exists() else {}
+        if _c.get("mode") == "github":
+            _teammates = _c.get("teammates", [])
+            _teammates_str = ", ".join(_teammates) if _teammates else "—"
+            parts.append("")
+            parts.append("## Collaboration")
+            parts.append(f"mode: {_c.get('mode', '—')}")
+            parts.append(f"repo: {_c.get('team_repo_url', '—')} / {_c.get('team_repo_subdir', 'root')}")
+            parts.append(f"teammates: {_teammates_str}")
+            parts.append(f"last_published: {_l.get('last_published', None) or 'never'}")
+            parts.append(f"last_loaded: {_l.get('last_loaded', None) or 'never'}")
+    except Exception:
+        pass
+
 # ── Update notification ────────────────────────────────────────────────────────
 import pathlib as _pl
 _last_check = _pl.Path.home() / ".draft" / "last-update-check"

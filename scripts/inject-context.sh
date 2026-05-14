@@ -142,38 +142,27 @@ if [ -f "$DRAFT_PERSONAL/memory.md" ]; then
 fi
 
 # ── Collaboration status (per-profile — reads from active workspace config/) ───
-if [ -f "$DRAFT_WORKSPACE/config/collaboration.md" ]; then
+if [ -f "$DRAFT_WORKSPACE/config/collaboration.json" ]; then
     echo ""
     echo "## Collaboration"
     python3 -c "
-import os
+import os, json
 from pathlib import Path
 ws = Path(os.environ.get('DRAFT_WORKSPACE', os.path.expanduser('~/.draft/workspaces/default')))
-collab = ws / 'config' / 'collaboration.md'
-local = ws / 'config' / 'local.md'
+collab = ws / 'config' / 'collaboration.json'
+local = ws / 'config' / 'local.json'
 
-def read_frontmatter(path):
-    if not path.exists(): return {}
-    text = path.read_text()
-    parts = text.split('---')
-    if len(parts) >= 3:
-        import re
-        fm = {}
-        for line in parts[1].strip().splitlines():
-            m = re.match(r'^(\w+):\s*(.+)$', line.strip())
-            if m: fm[m.group(1)] = m.group(2).strip()
-        return fm
-    return {}
-
-c = read_frontmatter(collab)
-l = read_frontmatter(local)
+c = json.loads(collab.read_text()) if collab.exists() else {}
+l = json.loads(local.read_text()) if local.exists() else {}
 
 if c.get('mode') == 'github':
+    teammates = c.get('teammates', [])
+    teammates_str = ', '.join(teammates) if teammates else '—'
     print(f\"mode: {c.get('mode', '—')}\")
     print(f\"repo: {c.get('team_repo_url', '—')} / {c.get('team_repo_subdir', 'root')}\")
-    print(f\"teammates: {c.get('teammates', '—')}\")
-    print(f\"last_published: {l.get('last_published', 'never')}\")
-    print(f\"last_loaded: {l.get('last_loaded', 'never')}\")
+    print(f\"teammates: {teammates_str}\")
+    print(f\"last_published: {l.get('last_published', None) or 'never'}\")
+    print(f\"last_loaded: {l.get('last_loaded', None) or 'never'}\")
 " 2>/dev/null
 fi
 
